@@ -2,6 +2,7 @@ Option Strict On
 Option Explicit On
 
 Imports System.Collections.Generic
+Imports System.Drawing.Drawing2D
 Imports System.Linq
 
 Public Class ucManageProposals
@@ -231,10 +232,29 @@ Public Class ucManageProposals
         dgvProposals.AutoGenerateColumns = False
         dgvProposals.Columns.Clear()
         dgvProposals.Columns.Add("colTitle", "Title")
+        dgvProposals.Columns.Add("colGroupName", "Group")
         dgvProposals.Columns.Add("colYearLevel", "Year Level")
         dgvProposals.Columns.Add("colSemester", "Semester")
         dgvProposals.Columns.Add("colStatus", "Status")
         dgvProposals.Columns.Add("colSubmitted", "Submitted")
+
+        dgvProposals.EnableHeadersVisualStyles = False
+        dgvProposals.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(246, 246, 246)
+        dgvProposals.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(100, 100, 100)
+        dgvProposals.ColumnHeadersDefaultCellStyle.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        dgvProposals.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleLeft
+        dgvProposals.ColumnHeadersDefaultCellStyle.Padding = New Padding(8, 0, 0, 0)
+        dgvProposals.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing
+        dgvProposals.ColumnHeadersHeight = 40
+        dgvProposals.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None
+        dgvProposals.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal
+        dgvProposals.GridColor = Color.FromArgb(235, 235, 235)
+        dgvProposals.BorderStyle = BorderStyle.None
+        dgvProposals.RowTemplate.Height = 48
+        dgvProposals.DefaultCellStyle.Padding = New Padding(8, 0, 0, 0)
+        dgvProposals.DefaultCellStyle.Font = New Font("Segoe UI", 9.5F, FontStyle.Regular)
+        dgvProposals.DefaultCellStyle.SelectionBackColor = Color.FromArgb(250, 240, 220)
+        dgvProposals.DefaultCellStyle.SelectionForeColor = Color.FromArgb(40, 40, 40)
 
         colActions.Name = "colActions"
         colActions.HeaderText = ""
@@ -246,6 +266,71 @@ Public Class ucManageProposals
         colActions.SortMode = DataGridViewColumnSortMode.NotSortable
         colActions.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
         dgvProposals.Columns.Add(colActions)
+    End Sub
+
+    Private Sub dgvProposals_CellPainting(sender As Object, e As DataGridViewCellPaintingEventArgs) Handles dgvProposals.CellPainting
+        If e.ColumnIndex <> dgvProposals.Columns("colStatus").Index OrElse e.RowIndex < 0 OrElse e.Value Is Nothing Then
+            Return
+        End If
+
+        e.PaintBackground(e.ClipBounds, True)
+
+        Dim statusText As String = e.Value.ToString()
+        Dim badgeColor As Color
+        Dim textColor As Color
+
+        Select Case statusText
+            Case "Pending"
+                badgeColor = Color.FromArgb(246, 201, 69)
+                textColor = Color.FromArgb(122, 31, 46)
+            Case "Approved"
+                badgeColor = Color.FromArgb(76, 154, 106)
+                textColor = Color.White
+            Case "For Revision"
+                badgeColor = Color.FromArgb(201, 138, 43)
+                textColor = Color.White
+            Case "Rejected"
+                badgeColor = Color.FromArgb(166, 58, 58)
+                textColor = Color.White
+            Case Else
+                e.PaintContent(e.ClipBounds)
+                e.Handled = True
+                Return
+        End Select
+
+        Dim measuredSize As SizeF = e.Graphics.MeasureString(statusText, e.CellStyle.Font)
+        Dim badgeWidth As Integer = CInt(Math.Ceiling(measuredSize.Width)) + 28
+        Dim badgeHeight As Integer = CInt(Math.Ceiling(measuredSize.Height)) + 12
+        Dim badgeBounds As New Rectangle(
+            e.CellBounds.Left + 8,
+            e.CellBounds.Top + (e.CellBounds.Height - badgeHeight) \ 2,
+            badgeWidth,
+            badgeHeight)
+        Dim cornerDiameter As Integer = Math.Min(20, Math.Min(badgeBounds.Width, badgeBounds.Height))
+
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias
+
+        Using badgePath As New GraphicsPath()
+            badgePath.AddArc(badgeBounds.Left, badgeBounds.Top, cornerDiameter, cornerDiameter, 180.0F, 90.0F)
+            badgePath.AddArc(badgeBounds.Right - cornerDiameter, badgeBounds.Top, cornerDiameter, cornerDiameter, 270.0F, 90.0F)
+            badgePath.AddArc(badgeBounds.Right - cornerDiameter, badgeBounds.Bottom - cornerDiameter, cornerDiameter, cornerDiameter, 0.0F, 90.0F)
+            badgePath.AddArc(badgeBounds.Left, badgeBounds.Bottom - cornerDiameter, cornerDiameter, cornerDiameter, 90.0F, 90.0F)
+            badgePath.CloseFigure()
+
+            Using badgeBrush As New SolidBrush(badgeColor)
+                e.Graphics.FillPath(badgeBrush, badgePath)
+            End Using
+        End Using
+
+        Using textBrush As New SolidBrush(textColor)
+            Using textFormat As New StringFormat()
+                textFormat.Alignment = StringAlignment.Center
+                textFormat.LineAlignment = StringAlignment.Center
+                e.Graphics.DrawString(statusText, e.CellStyle.Font, textBrush, badgeBounds, textFormat)
+            End Using
+        End Using
+
+        e.Handled = True
     End Sub
 
     Private Sub dgvProposals_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvProposals.CellContentClick
@@ -310,6 +395,7 @@ Public Class ucManageProposals
             For Each proposal As Proposal In proposalsToShow
                 Dim rowIndex As Integer = dgvProposals.Rows.Add(
                     proposal.Title,
+                    proposal.GroupName,
                     proposal.YearLevel,
                     proposal.Semester,
                     FormatStatus(proposal.Status),
