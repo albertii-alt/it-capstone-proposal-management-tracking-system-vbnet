@@ -273,4 +273,48 @@ Public Class ProposalDAL
 
         Return results
     End Function
+
+    Public Shared Function DeleteProposal(proposalId As Integer) As Boolean
+        Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
+            conn.Open()
+
+            Using transaction As MySqlTransaction = conn.BeginTransaction()
+                Try
+                    Using logCmd As New MySqlCommand(
+                        "DELETE FROM tbl_status_log WHERE proposal_id = @proposal_id",
+                        conn,
+                        transaction)
+                        logCmd.Parameters.AddWithValue("@proposal_id", proposalId)
+                        logCmd.ExecuteNonQuery()
+                    End Using
+
+                    Using memberCmd As New MySqlCommand(
+                        "DELETE FROM tbl_proposal_members WHERE proposal_id = @proposal_id",
+                        conn,
+                        transaction)
+                        memberCmd.Parameters.AddWithValue("@proposal_id", proposalId)
+                        memberCmd.ExecuteNonQuery()
+                    End Using
+
+                    Dim deletedRows As Integer
+                    Using proposalCmd As New MySqlCommand(
+                        "DELETE FROM tbl_proposals WHERE proposal_id = @proposal_id",
+                        conn,
+                        transaction)
+                        proposalCmd.Parameters.AddWithValue("@proposal_id", proposalId)
+                        deletedRows = proposalCmd.ExecuteNonQuery()
+                    End Using
+
+                    transaction.Commit()
+                    Return deletedRows > 0
+                Catch ex As MySqlException
+                    transaction.Rollback()
+                    Throw New ApplicationException("Failed to delete the proposal. Please try again.", ex)
+                Catch
+                    transaction.Rollback()
+                    Throw
+                End Try
+            End Using
+        End Using
+    End Function
 End Class

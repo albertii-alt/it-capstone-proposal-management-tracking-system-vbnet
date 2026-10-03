@@ -30,6 +30,14 @@ Public Class ProposalService
         Return ProposalDAL.GetAllProposals()
     End Function
 
+    Public Shared Function DeleteProposal(proposalId As Integer) As Boolean
+        If proposalId <= 0 Then
+            Throw New ArgumentOutOfRangeException(NameOf(proposalId))
+        End If
+
+        Return ProposalDAL.DeleteProposal(proposalId)
+    End Function
+
     Public Shared Function GetLatestLog(proposalId As Integer) As StatusLogEntry
         Return StatusLogDAL.GetLatestLogForProposal(proposalId)
     End Function

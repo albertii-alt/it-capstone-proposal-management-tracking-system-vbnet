@@ -483,7 +483,27 @@ Public Class ucManageProposals
                 End If
             End If
         End Sub
-        AddHandler deleteItem.Click, Sub(menuSender As Object, menuEventArgs As EventArgs) MessageBox.Show("Delete: " & proposal.Title)
+        AddHandler deleteItem.Click, Sub(menuSender As Object, menuEventArgs As EventArgs)
+            Using confirmation As New frmDeleteConfirmation("proposal", proposal.Title)
+                If confirmation.ShowDialog(Me.FindForm()) <> DialogResult.OK Then
+                    Return
+                End If
+            End Using
+
+            Try
+                If Not ProposalService.DeleteProposal(proposal.ProposalId) Then
+                    MessageBox.Show("The proposal could not be found. It may have already been deleted.")
+                    Return
+                End If
+
+                MessageBox.Show("Proposal deleted successfully.")
+                If FetchProposals() Then
+                    ApplyFiltersAndSort(0)
+                End If
+            Catch ex As Exception
+                MessageBox.Show("Could not delete the proposal: " & ex.Message)
+            End Try
+        End Sub
 
         contextMenu.Items.Add(viewReviewItem)
         contextMenu.Items.Add(deleteItem)
