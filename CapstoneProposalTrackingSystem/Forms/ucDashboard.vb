@@ -352,8 +352,6 @@ Public Class ucDashboard
         Dim activityLayout As New TableLayoutPanel()
         Dim dateLabel As New Label()
         Dim activityLabel As New Label()
-        Dim oldStatus As String = If(String.IsNullOrEmpty(entry.OldStatus), "New", entry.OldStatus)
-
         row.Name = "pnlRecentActivityRow" & displayIndex.ToString()
         row.Dock = DockStyle.Top
         row.Height = 74
@@ -394,7 +392,7 @@ Public Class ucDashboard
         activityLabel.Name = "lblRecentActivity" & displayIndex.ToString()
         activityLabel.AutoSize = False
         activityLabel.Dock = DockStyle.Fill
-        activityLabel.Text = """" & entry.ProposalTitle & """ moved from " & oldStatus & " to " & entry.NewStatus
+        activityLabel.Text = entry.ActivityText
         activityLabel.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular)
         activityLabel.ForeColor = Color.FromArgb(60, 60, 60)
         activityLabel.TextAlign = ContentAlignment.TopLeft
@@ -409,11 +407,16 @@ Public Class ucDashboard
     End Function
 
     Private Function GetActivityColor(status As String) As Color
+        If String.Equals(status, "Submitted", StringComparison.OrdinalIgnoreCase) Then
+            Return Color.FromArgb(76, 154, 106)
+        End If
+
         If String.Equals(status, "Approved", StringComparison.OrdinalIgnoreCase) Then
             Return Color.FromArgb(76, 154, 106)
         End If
 
-        If String.Equals(status, "Rejected", StringComparison.OrdinalIgnoreCase) Then
+        If String.Equals(status, "Rejected", StringComparison.OrdinalIgnoreCase) OrElse
+           String.Equals(status, "Deleted", StringComparison.OrdinalIgnoreCase) Then
             Return Color.FromArgb(166, 58, 58)
         End If
 

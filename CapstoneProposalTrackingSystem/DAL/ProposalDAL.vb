@@ -3,7 +3,7 @@ Imports MySql.Data.MySqlClient
 
 Public Class ProposalDAL
 
-    Public Shared Function InsertProposal(proposal As Proposal) As Integer
+    Public Shared Function InsertProposal(proposal As Proposal, Optional adminActorName As String = Nothing) As Integer
         Dim newProposalId As Integer = 0
 
         Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
@@ -40,6 +40,19 @@ Public Class ProposalDAL
                             memberCmd.ExecuteNonQuery()
                         End Using
                     Next
+                End If
+
+                If Not String.IsNullOrWhiteSpace(adminActorName) Then
+                    Dim activityQuery As String = "INSERT INTO tbl_proposal_activity (action_type, proposal_title, actor_name, created_at) " &
+                                                  "VALUES (@action_type, @proposal_title, @actor_name, @created_at)"
+
+                    Using activityCmd As New MySqlCommand(activityQuery, conn, transaction)
+                        activityCmd.Parameters.AddWithValue("@action_type", "Submitted")
+                        activityCmd.Parameters.AddWithValue("@proposal_title", proposal.Title)
+                        activityCmd.Parameters.AddWithValue("@actor_name", adminActorName.Trim())
+                        activityCmd.Parameters.AddWithValue("@created_at", proposal.SubmittedAt)
+                        activityCmd.ExecuteNonQuery()
+                    End Using
                 End If
 
                 transaction.Commit()
@@ -274,12 +287,30 @@ Public Class ProposalDAL
         Return results
     End Function
 
-    Public Shared Function DeleteProposal(proposalId As Integer) As Boolean
+    Public Shared Function DeleteProposal(proposalId As Integer, Optional actorName As String = "Admin") As Boolean
         Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
             conn.Open()
 
             Using transaction As MySqlTransaction = conn.BeginTransaction()
                 Try
+                    Dim proposalTitle As String = Nothing
+                    Using findCmd As New MySqlCommand(
+                        "SELECT title FROM tbl_proposals WHERE proposal_id = @proposal_id FOR UPDATE",
+                        conn,
+                        transaction)
+                        findCmd.Parameters.AddWithValue("@proposal_id", proposalId)
+                        Dim titleResult As Object = findCmd.ExecuteScalar()
+
+                        If titleResult IsNot Nothing AndAlso titleResult IsNot DBNull.Value Then
+                            proposalTitle = titleResult.ToString()
+                        End If
+                    End Using
+
+                    If proposalTitle Is Nothing Then
+                        transaction.Commit()
+                        Return False
+                    End If
+
                     Using logCmd As New MySqlCommand(
                         "DELETE FROM tbl_status_log WHERE proposal_id = @proposal_id",
                         conn,
@@ -304,6 +335,19 @@ Public Class ProposalDAL
                         proposalCmd.Parameters.AddWithValue("@proposal_id", proposalId)
                         deletedRows = proposalCmd.ExecuteNonQuery()
                     End Using
+
+                    If deletedRows > 0 Then
+                        Dim activityQuery As String = "INSERT INTO tbl_proposal_activity (action_type, proposal_title, actor_name, created_at) " &
+                                                      "VALUES (@action_type, @proposal_title, @actor_name, @created_at)"
+
+                        Using activityCmd As New MySqlCommand(activityQuery, conn, transaction)
+                            activityCmd.Parameters.AddWithValue("@action_type", "Deleted")
+                            activityCmd.Parameters.AddWithValue("@proposal_title", proposalTitle)
+                            activityCmd.Parameters.AddWithValue("@actor_name", If(String.IsNullOrWhiteSpace(actorName), "Admin", actorName.Trim()))
+                            activityCmd.Parameters.AddWithValue("@created_at", DateTime.Now)
+                            activityCmd.ExecuteNonQuery()
+                        End Using
+                    End If
 
                     transaction.Commit()
                     Return deletedRows > 0

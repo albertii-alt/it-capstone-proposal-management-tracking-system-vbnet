@@ -110,6 +110,16 @@ CREATE TABLE tbl_status_log (
     FOREIGN KEY (admin_id) REFERENCES tbl_users(user_id)
 ) ENGINE=InnoDB;
 
+-- Snapshot activity events are intentionally independent of proposals so
+-- delete events remain available after a proposal is removed.
+CREATE TABLE IF NOT EXISTS tbl_proposal_activity (
+  activity_id   INT AUTO_INCREMENT PRIMARY KEY,
+  action_type   ENUM('Submitted', 'Deleted') NOT NULL,
+  proposal_title VARCHAR(255) NOT NULL,
+  actor_name    VARCHAR(100) NOT NULL,
+  created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 CREATE TABLE tbl_title_archive (
   archive_id        INT AUTO_INCREMENT PRIMARY KEY,
   title             VARCHAR(255) NOT NULL,
@@ -119,6 +129,11 @@ CREATE TABLE tbl_title_archive (
 ```
 
 ## Notes
+
+- Existing databases must create `tbl_proposal_activity` before deploying the
+  updated application. This snapshot table intentionally has no foreign key
+  to proposals so Admin submission/deletion events remain visible after a
+  proposal is removed.
 
 - `tbl_status_log` doubles as the audit trail and the source for "remarks"
   shown to students — don't add a separate `remarks` column on

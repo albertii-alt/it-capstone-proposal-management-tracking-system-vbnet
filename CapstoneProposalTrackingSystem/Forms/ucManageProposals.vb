@@ -17,6 +17,7 @@ Public Class ucManageProposals
     Private _pageControlsReady As Boolean = False
 
     Private WithEvents lblHeader As New Label()
+    Private WithEvents lblHeaderSubtitle As New Label()
     Private ReadOnly pnlFilterToolbar As New Panel()
     Private ReadOnly flpStatusPills As New FlowLayoutPanel()
     Private ReadOnly flpFilterDropdowns As New FlowLayoutPanel()
@@ -54,6 +55,7 @@ Public Class ucManageProposals
     Private Sub InitializeComponent()
         Dim layout As New TableLayoutPanel()
         Dim headerPanel As New Panel()
+        Dim headerTextLayout As New TableLayoutPanel()
         Dim headerActions As New FlowLayoutPanel()
 
         Me.SuspendLayout()
@@ -67,7 +69,7 @@ Public Class ucManageProposals
         layout.ColumnCount = 1
         layout.RowCount = 4
         layout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 32.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 72.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
@@ -76,7 +78,24 @@ Public Class ucManageProposals
         lblHeader.Text = "Manage Proposals"
         lblHeader.Dock = DockStyle.Fill
         lblHeader.TextAlign = ContentAlignment.MiddleLeft
-        lblHeader.Font = New Font("Segoe UI", 12.0F, FontStyle.Bold)
+        lblHeader.Font = New Font("Segoe UI", 23.0F, FontStyle.Bold)
+
+        lblHeaderSubtitle.Name = "lblHeaderSubtitle"
+        lblHeaderSubtitle.Text = "Review submissions, manage titles, and update proposal decisions."
+        lblHeaderSubtitle.Dock = DockStyle.Fill
+        lblHeaderSubtitle.TextAlign = ContentAlignment.MiddleLeft
+        lblHeaderSubtitle.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular)
+        lblHeaderSubtitle.ForeColor = Color.DimGray
+
+        headerTextLayout.Name = "tlpManageProposalsHeaderText"
+        headerTextLayout.Dock = DockStyle.Fill
+        headerTextLayout.ColumnCount = 1
+        headerTextLayout.RowCount = 2
+        headerTextLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        headerTextLayout.Controls.Add(lblHeader, 0, 0)
+        headerTextLayout.Controls.Add(lblHeaderSubtitle, 0, 1)
 
         headerPanel.Name = "pnlManageProposalsHeader"
         headerPanel.Dock = DockStyle.Fill
@@ -105,7 +124,7 @@ Public Class ucManageProposals
 
         headerActions.Controls.Add(btnRefresh)
         headerActions.Controls.Add(btnSubmitProposal)
-        headerPanel.Controls.Add(lblHeader)
+        headerPanel.Controls.Add(headerTextLayout)
         headerPanel.Controls.Add(headerActions)
 
         pnlFilterToolbar.Name = "pnlFilterToolbar"
@@ -484,7 +503,7 @@ Public Class ucManageProposals
             End Using
 
             Try
-                If Not ProposalService.DeleteProposal(proposal.ProposalId) Then
+                If Not ProposalService.DeleteProposal(proposal.ProposalId, Session.CurrentUser.FullName) Then
                     MessageBox.Show("The proposal could not be found. It may have already been deleted.")
                     Return
                 End If

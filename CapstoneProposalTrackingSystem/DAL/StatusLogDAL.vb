@@ -5,6 +5,7 @@ Public Class RecentActivityEntry
     Public Property ProposalTitle As String
     Public Property OldStatus As String
     Public Property NewStatus As String
+    Public Property ActivityText As String
     Public Property ChangedAt As DateTime
 End Class
 
@@ -71,10 +72,18 @@ Public Class StatusLogDAL
         Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
             conn.Open()
 
-            Dim query As String = "SELECT p.title, l.old_status, l.new_status, l.changed_at " &
-                                  "FROM tbl_status_log l " &
-                                  "INNER JOIN tbl_proposals p ON p.proposal_id = l.proposal_id " &
-                                  "ORDER BY l.changed_at DESC " &
+            Dim query As String = "SELECT activity_text, activity_status, changed_at " &
+                                  "FROM (" &
+                                  "SELECT CONCAT('""', p.title, '"" moved from ', COALESCE(l.old_status, 'New'), ' to ', l.new_status) AS activity_text, " &
+                                  "l.new_status AS activity_status, l.changed_at AS changed_at " &
+                                  "FROM tbl_status_log l INNER JOIN tbl_proposals p ON p.proposal_id = l.proposal_id " &
+                                  "UNION ALL " &
+                                  "SELECT CASE WHEN a.action_type = 'Submitted' THEN CONCAT('""', a.proposal_title, '"" was submitted by ', a.actor_name) " &
+                                  "ELSE CONCAT('""', a.proposal_title, '"" was deleted by ', a.actor_name) END AS activity_text, " &
+                                  "a.action_type AS activity_status, a.created_at AS changed_at " &
+                                  "FROM tbl_proposal_activity a" &
+                                  ") AS recent_activity " &
+                                  "ORDER BY changed_at DESC " &
                                   "LIMIT @max_rows"
 
             Using cmd As New MySqlCommand(query, conn)
@@ -83,9 +92,8 @@ Public Class StatusLogDAL
                 Using reader As MySqlDataReader = cmd.ExecuteReader()
                     While reader.Read()
                         entries.Add(New RecentActivityEntry With {
-                            .ProposalTitle = reader.GetString("title"),
-                            .OldStatus = If(reader.IsDBNull(reader.GetOrdinal("old_status")), "", reader.GetString("old_status")),
-                            .NewStatus = reader.GetString("new_status"),
+                            .ActivityText = reader.GetString("activity_text"),
+                            .NewStatus = reader.GetString("activity_status"),
                             .ChangedAt = reader.GetDateTime("changed_at")
                         })
                     End While

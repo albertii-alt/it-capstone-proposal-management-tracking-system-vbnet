@@ -16,10 +16,19 @@ Public Class ProposalService
     End Function
 
     Public Shared Function SubmitProposal(proposal As Proposal) As Integer
+        Return SubmitProposal(proposal, Nothing)
+    End Function
+
+    Public Shared Function SubmitProposal(proposal As Proposal, submittingUser As User) As Integer
         proposal.SubmittedAt = DateTime.Now
         proposal.Status = ProposalStatus.Pending
 
-        Return ProposalDAL.InsertProposal(proposal)
+        Dim adminActorName As String = Nothing
+        If submittingUser IsNot Nothing AndAlso submittingUser.Role = UserRole.Admin Then
+            adminActorName = submittingUser.FullName
+        End If
+
+        Return ProposalDAL.InsertProposal(proposal, adminActorName)
     End Function
 
     Public Shared Function GetMyProposals(userId As Integer) As List(Of Proposal)
@@ -31,11 +40,15 @@ Public Class ProposalService
     End Function
 
     Public Shared Function DeleteProposal(proposalId As Integer) As Boolean
+        Return DeleteProposal(proposalId, "Admin")
+    End Function
+
+    Public Shared Function DeleteProposal(proposalId As Integer, actorName As String) As Boolean
         If proposalId <= 0 Then
             Throw New ArgumentOutOfRangeException(NameOf(proposalId))
         End If
 
-        Return ProposalDAL.DeleteProposal(proposalId)
+        Return ProposalDAL.DeleteProposal(proposalId, actorName)
     End Function
 
     Public Shared Function GetLatestLog(proposalId As Integer) As StatusLogEntry

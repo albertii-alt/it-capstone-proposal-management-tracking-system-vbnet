@@ -92,7 +92,7 @@
         Next
 
         Try
-            ProposalService.SubmitProposal(proposal)
+            ProposalService.SubmitProposal(proposal, Session.CurrentUser)
             MessageBox.Show("Proposal submitted successfully! Status: Pending.")
             Me.Close()
         Catch ex As ApplicationException
