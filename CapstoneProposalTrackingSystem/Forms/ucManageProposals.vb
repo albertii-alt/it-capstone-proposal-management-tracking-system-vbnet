@@ -474,14 +474,7 @@ Public Class ucManageProposals
         Dim deleteItem As New ToolStripMenuItem("Delete")
 
         AddHandler viewReviewItem.Click, Sub(menuSender As Object, menuEventArgs As EventArgs)
-            Dim reviewDialog As New frmProposalReview(proposal.ProposalId)
-            Dim result As DialogResult = reviewDialog.ShowDialog()
-
-            If result = DialogResult.OK Then
-                If FetchProposals() Then
-                    ApplyFiltersAndSort(proposal.ProposalId)
-                End If
-            End If
+            OpenReviewDialog(proposal)
         End Sub
         AddHandler deleteItem.Click, Sub(menuSender As Object, menuEventArgs As EventArgs)
             Using confirmation As New frmDeleteConfirmation("proposal", proposal.Title)
@@ -511,6 +504,33 @@ Public Class ucManageProposals
         Dim cellBounds As Rectangle = dgvProposals.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, False)
         Dim menuLocation As Point = dgvProposals.PointToScreen(New Point(cellBounds.Left, cellBounds.Bottom))
         contextMenu.Show(menuLocation)
+    End Sub
+
+    Private Sub dgvProposals_CellDoubleClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvProposals.CellDoubleClick
+        If e.RowIndex < 0 OrElse e.ColumnIndex = colActions.Index Then
+            Return
+        End If
+
+        Dim proposalId As Integer = CInt(dgvProposals.Rows(e.RowIndex).Tag)
+        Dim proposal As Proposal = _proposals.FirstOrDefault(Function(item) item.ProposalId = proposalId)
+
+        If proposal IsNot Nothing Then
+            OpenReviewDialog(proposal)
+        End If
+    End Sub
+
+    Private Sub OpenReviewDialog(proposal As Proposal)
+        If proposal Is Nothing Then
+            Return
+        End If
+
+        Using reviewDialog As New frmProposalReview(proposal.ProposalId)
+            If reviewDialog.ShowDialog(Me.FindForm()) = DialogResult.OK Then
+                If FetchProposals() Then
+                    ApplyFiltersAndSort(proposal.ProposalId)
+                End If
+            End If
+        End Using
     End Sub
 
     Private Function FetchProposals() As Boolean
