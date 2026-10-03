@@ -2,15 +2,29 @@ Option Strict On
 Option Explicit On
 
 Imports System.Collections.Generic
+Imports System.Linq
 
 Public Class ucManageProposals
     Inherits UserControl
 
     Private _proposals As New List(Of Proposal)
     Private _isLoading As Boolean = False
+    Private _activeStatusFilter As Nullable(Of ProposalStatus) = Nothing
 
     Private WithEvents lblHeader As New Label()
+    Private ReadOnly pnlFilterToolbar As New Panel()
+    Private ReadOnly flpStatusPills As New FlowLayoutPanel()
+    Private ReadOnly flpFilterDropdowns As New FlowLayoutPanel()
+    Private WithEvents btnFilterAll As New Button()
+    Private WithEvents btnFilterPending As New Button()
+    Private WithEvents btnFilterApproved As New Button()
+    Private WithEvents btnFilterRevision As New Button()
+    Private WithEvents btnFilterRejected As New Button()
+    Private WithEvents cboYearLevelFilter As New ComboBox()
+    Private WithEvents cboSemesterFilter As New ComboBox()
+    Private WithEvents cboSortBy As New ComboBox()
     Private WithEvents dgvProposals As New DataGridView()
+    Private ReadOnly colActions As New DataGridViewButtonColumn()
     Private WithEvents lblDetailsField As New Label()
     Private WithEvents txtDetails As New TextBox()
     Private WithEvents lblStatusField As New Label()
@@ -26,8 +40,7 @@ Public Class ucManageProposals
 
     Private Sub InitializeComponent()
         Dim layout As New TableLayoutPanel()
-        Dim decisionLayout As New TableLayoutPanel()
-        Dim actionLayout As New FlowLayoutPanel()
+        Dim headerPanel As New Panel()
 
         Me.SuspendLayout()
         Me.AutoScaleMode = AutoScaleMode.Font
@@ -38,20 +51,77 @@ Public Class ucManageProposals
         layout.Dock = DockStyle.Fill
         layout.Padding = New Padding(20)
         layout.ColumnCount = 1
-        layout.RowCount = 6
+        layout.RowCount = 3
         layout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 32.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Percent, 45.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 22.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Percent, 30.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Percent, 25.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 42.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         lblHeader.Name = "lblHeader"
         lblHeader.Text = "Manage Proposals"
         lblHeader.Dock = DockStyle.Fill
         lblHeader.TextAlign = ContentAlignment.MiddleLeft
         lblHeader.Font = New Font("Segoe UI", 12.0F, FontStyle.Bold)
+
+        headerPanel.Name = "pnlManageProposalsHeader"
+        headerPanel.Dock = DockStyle.Fill
+
+        btnRefresh.Name = "btnRefresh"
+        btnRefresh.Text = "Refresh"
+        btnRefresh.Size = New Size(110, 28)
+        btnRefresh.Dock = DockStyle.Right
+        btnRefresh.UseVisualStyleBackColor = True
+        headerPanel.Controls.Add(lblHeader)
+        headerPanel.Controls.Add(btnRefresh)
+
+        pnlFilterToolbar.Name = "pnlFilterToolbar"
+        pnlFilterToolbar.Dock = DockStyle.Top
+        pnlFilterToolbar.Height = 80
+        pnlFilterToolbar.BackColor = SystemColors.Control
+
+        flpStatusPills.Name = "flpStatusPills"
+        flpStatusPills.Dock = DockStyle.Top
+        flpStatusPills.Height = 36
+        flpStatusPills.FlowDirection = FlowDirection.LeftToRight
+        flpStatusPills.WrapContents = False
+        flpStatusPills.Padding = New Padding(0, 3, 0, 0)
+
+        ConfigureFilterButton(btnFilterAll, "btnFilterAll", "All", 100, True)
+        ConfigureFilterButton(btnFilterPending, "btnFilterPending", "Pending", 100, False)
+        ConfigureFilterButton(btnFilterApproved, "btnFilterApproved", "Approved", 100, False)
+        ConfigureFilterButton(btnFilterRevision, "btnFilterRevision", "For Revision", 120, False)
+        ConfigureFilterButton(btnFilterRejected, "btnFilterRejected", "Rejected", 100, False)
+
+        flpStatusPills.Controls.Add(btnFilterAll)
+        flpStatusPills.Controls.Add(btnFilterPending)
+        flpStatusPills.Controls.Add(btnFilterApproved)
+        flpStatusPills.Controls.Add(btnFilterRevision)
+        flpStatusPills.Controls.Add(btnFilterRejected)
+
+        flpFilterDropdowns.Name = "flpFilterDropdowns"
+        flpFilterDropdowns.Dock = DockStyle.Top
+        flpFilterDropdowns.Height = 36
+        flpFilterDropdowns.FlowDirection = FlowDirection.LeftToRight
+        flpFilterDropdowns.WrapContents = False
+        flpFilterDropdowns.Padding = New Padding(0, 3, 0, 0)
+
+        ConfigureFilterComboBox(cboYearLevelFilter, "cboYearLevelFilter", 150)
+        cboYearLevelFilter.Items.AddRange({"All Year Levels", "1st Year", "2nd Year", "3rd Year", "4th Year"})
+        cboYearLevelFilter.SelectedIndex = 0
+
+        ConfigureFilterComboBox(cboSemesterFilter, "cboSemesterFilter", 150)
+        cboSemesterFilter.Items.AddRange({"All Semesters", "1st Semester", "2nd Semester"})
+        cboSemesterFilter.SelectedIndex = 0
+
+        ConfigureFilterComboBox(cboSortBy, "cboSortBy", 160)
+        cboSortBy.Items.AddRange({"Newest First", "Oldest First", "Title (A-Z)", "Title (Z-A)"})
+        cboSortBy.SelectedIndex = 0
+
+        flpFilterDropdowns.Controls.Add(cboYearLevelFilter)
+        flpFilterDropdowns.Controls.Add(cboSemesterFilter)
+        flpFilterDropdowns.Controls.Add(cboSortBy)
+        pnlFilterToolbar.Controls.Add(flpFilterDropdowns)
+        pnlFilterToolbar.Controls.Add(flpStatusPills)
 
         dgvProposals.Name = "dgvProposals"
         dgvProposals.Dock = DockStyle.Fill
@@ -66,85 +136,95 @@ Public Class ucManageProposals
         dgvProposals.RowHeadersVisible = False
         dgvProposals.SelectionMode = DataGridViewSelectionMode.FullRowSelect
 
-        lblDetailsField.Name = "lblDetailsField"
-        lblDetailsField.Text = "Proposal Details"
-        lblDetailsField.Dock = DockStyle.Fill
-        lblDetailsField.TextAlign = ContentAlignment.MiddleLeft
-
-        txtDetails.Name = "txtDetails"
-        txtDetails.Dock = DockStyle.Fill
-        txtDetails.Multiline = True
-        txtDetails.ReadOnly = True
-        txtDetails.ScrollBars = ScrollBars.Vertical
-
-        decisionLayout.Name = "tlpDecisionDetails"
-        decisionLayout.Dock = DockStyle.Fill
-        decisionLayout.ColumnCount = 2
-        decisionLayout.RowCount = 2
-        decisionLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 30.0F))
-        decisionLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 70.0F))
-        decisionLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 22.0F))
-        decisionLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
-
-        lblStatusField.Name = "lblStatusField"
-        lblStatusField.Text = "Set Status"
-        lblStatusField.Dock = DockStyle.Fill
-        lblStatusField.TextAlign = ContentAlignment.MiddleLeft
-
-        cboStatus.Name = "cboStatus"
-        cboStatus.Dock = DockStyle.Top
-        cboStatus.DropDownStyle = ComboBoxStyle.DropDownList
-        cboStatus.FormattingEnabled = True
-
-        lblRemarksField.Name = "lblRemarksField"
-        lblRemarksField.Text = "Remarks"
-        lblRemarksField.Dock = DockStyle.Fill
-        lblRemarksField.TextAlign = ContentAlignment.MiddleLeft
-
-        txtRemarks.Name = "txtRemarks"
-        txtRemarks.Dock = DockStyle.Fill
-        txtRemarks.Multiline = True
-        txtRemarks.ScrollBars = ScrollBars.Vertical
-
-        decisionLayout.Controls.Add(lblStatusField, 0, 0)
-        decisionLayout.Controls.Add(lblRemarksField, 1, 0)
-        decisionLayout.Controls.Add(cboStatus, 0, 1)
-        decisionLayout.Controls.Add(txtRemarks, 1, 1)
-
-        actionLayout.Name = "flpProposalActions"
-        actionLayout.Dock = DockStyle.Fill
-        actionLayout.FlowDirection = FlowDirection.LeftToRight
-        actionLayout.WrapContents = False
-
-        btnSaveDecision.Name = "btnSaveDecision"
-        btnSaveDecision.Text = "Save Decision"
-        btnSaveDecision.Size = New Size(150, 32)
-        btnSaveDecision.UseVisualStyleBackColor = True
-
-        btnRefresh.Name = "btnRefresh"
-        btnRefresh.Text = "Refresh"
-        btnRefresh.Size = New Size(110, 32)
-        btnRefresh.UseVisualStyleBackColor = True
-
-        actionLayout.Controls.Add(btnSaveDecision)
-        actionLayout.Controls.Add(btnRefresh)
-
-        layout.Controls.Add(lblHeader, 0, 0)
-        layout.Controls.Add(dgvProposals, 0, 1)
-        layout.Controls.Add(lblDetailsField, 0, 2)
-        layout.Controls.Add(txtDetails, 0, 3)
-        layout.Controls.Add(decisionLayout, 0, 4)
-        layout.Controls.Add(actionLayout, 0, 5)
+        layout.Controls.Add(headerPanel, 0, 0)
+        layout.Controls.Add(pnlFilterToolbar, 0, 1)
+        layout.Controls.Add(dgvProposals, 0, 2)
 
         Me.Controls.Add(layout)
         Me.ResumeLayout(False)
+    End Sub
+
+    Private Sub ConfigureFilterButton(filterButton As Button, controlName As String, buttonText As String, buttonWidth As Integer, isActive As Boolean)
+        filterButton.Name = controlName
+        filterButton.Text = buttonText
+        filterButton.FlatStyle = FlatStyle.Flat
+        filterButton.FlatAppearance.BorderSize = 0
+        filterButton.Size = New Size(buttonWidth, 30)
+        filterButton.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular)
+        filterButton.Margin = New Padding(0, 0, 8, 0)
+        filterButton.BackColor = If(isActive, Color.FromArgb(122, 31, 46), Color.FromArgb(235, 235, 235))
+        filterButton.ForeColor = If(isActive, Color.White, Color.FromArgb(60, 60, 60))
+    End Sub
+
+    Private Sub ConfigureFilterComboBox(filterComboBox As ComboBox, controlName As String, controlWidth As Integer)
+        filterComboBox.Name = controlName
+        filterComboBox.DropDownStyle = ComboBoxStyle.DropDownList
+        filterComboBox.Width = controlWidth
+        filterComboBox.Margin = New Padding(0, 0, 12, 0)
+    End Sub
+
+    Private Sub SetActiveFilterButton(activeButton As Button, statusFilter As Nullable(Of ProposalStatus))
+        Dim filterButtons As Button() = {
+            btnFilterAll,
+            btnFilterPending,
+            btnFilterApproved,
+            btnFilterRevision,
+            btnFilterRejected
+        }
+
+        For Each filterButton As Button In filterButtons
+            Dim isActive As Boolean = filterButton Is activeButton
+            filterButton.BackColor = If(isActive, Color.FromArgb(122, 31, 46), Color.FromArgb(235, 235, 235))
+            filterButton.ForeColor = If(isActive, Color.White, Color.FromArgb(60, 60, 60))
+        Next
+
+        _activeStatusFilter = statusFilter
+    End Sub
+
+    Private Sub btnFilterAll_Click(sender As Object, e As EventArgs) Handles btnFilterAll.Click
+        SetActiveFilterButton(btnFilterAll, Nothing)
+        ApplyFiltersAndSort(0)
+    End Sub
+
+    Private Sub btnFilterPending_Click(sender As Object, e As EventArgs) Handles btnFilterPending.Click
+        SetActiveFilterButton(btnFilterPending, New Nullable(Of ProposalStatus)(ProposalStatus.Pending))
+        ApplyFiltersAndSort(0)
+    End Sub
+
+    Private Sub btnFilterApproved_Click(sender As Object, e As EventArgs) Handles btnFilterApproved.Click
+        SetActiveFilterButton(btnFilterApproved, New Nullable(Of ProposalStatus)(ProposalStatus.Approved))
+        ApplyFiltersAndSort(0)
+    End Sub
+
+    Private Sub btnFilterRevision_Click(sender As Object, e As EventArgs) Handles btnFilterRevision.Click
+        SetActiveFilterButton(btnFilterRevision, New Nullable(Of ProposalStatus)(ProposalStatus.ForRevision))
+        ApplyFiltersAndSort(0)
+    End Sub
+
+    Private Sub btnFilterRejected_Click(sender As Object, e As EventArgs) Handles btnFilterRejected.Click
+        SetActiveFilterButton(btnFilterRejected, New Nullable(Of ProposalStatus)(ProposalStatus.Rejected))
+        ApplyFiltersAndSort(0)
+    End Sub
+
+    Private Sub cboYearLevelFilter_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboYearLevelFilter.SelectedIndexChanged
+        ApplyFiltersAndSort(0)
+    End Sub
+
+    Private Sub cboSemesterFilter_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSemesterFilter.SelectedIndexChanged
+        ApplyFiltersAndSort(0)
+    End Sub
+
+    Private Sub cboSortBy_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSortBy.SelectedIndexChanged
+        ApplyFiltersAndSort(0)
     End Sub
 
     Private Sub ucManageProposals_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         cboStatus.Items.AddRange({"Pending", "Approved", "For Revision", "Rejected"})
 
         SetupGridColumns()
-        LoadProposals(0)
+        If FetchProposals() Then
+            ApplyFiltersAndSort(0)
+        End If
     End Sub
 
     Private Sub SetupGridColumns()
@@ -155,16 +235,79 @@ Public Class ucManageProposals
         dgvProposals.Columns.Add("colSemester", "Semester")
         dgvProposals.Columns.Add("colStatus", "Status")
         dgvProposals.Columns.Add("colSubmitted", "Submitted")
+
+        colActions.Name = "colActions"
+        colActions.HeaderText = ""
+        colActions.Text = "⋮"
+        colActions.UseColumnTextForButtonValue = True
+        colActions.Width = 50
+        colActions.AutoSizeMode = DataGridViewAutoSizeColumnMode.None
+        colActions.FlatStyle = FlatStyle.Flat
+        colActions.SortMode = DataGridViewColumnSortMode.NotSortable
+        colActions.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter
+        dgvProposals.Columns.Add(colActions)
     End Sub
 
-    Private Sub LoadProposals(selectProposalId As Integer)
+    Private Sub dgvProposals_CellContentClick(sender As Object, e As DataGridViewCellEventArgs) Handles dgvProposals.CellContentClick
+        If e.ColumnIndex <> colActions.Index OrElse e.RowIndex < 0 Then
+            Return
+        End If
+
+        Dim proposalId As Integer = CInt(dgvProposals.Rows(e.RowIndex).Tag)
+        Dim proposal As Proposal = Nothing
+
+        For Each item As Proposal In _proposals
+            If item.ProposalId = proposalId Then
+                proposal = item
+                Exit For
+            End If
+        Next
+
+        If proposal Is Nothing Then
+            Return
+        End If
+
+        Dim contextMenu As New ContextMenuStrip()
+        Dim viewReviewItem As New ToolStripMenuItem("View / Review")
+        Dim deleteItem As New ToolStripMenuItem("Delete")
+
+        AddHandler viewReviewItem.Click, Sub(menuSender As Object, menuEventArgs As EventArgs)
+            Dim reviewDialog As New frmProposalReview(proposal.ProposalId)
+            Dim result As DialogResult = reviewDialog.ShowDialog()
+
+            If result = DialogResult.OK Then
+                If FetchProposals() Then
+                    ApplyFiltersAndSort(proposal.ProposalId)
+                End If
+            End If
+        End Sub
+        AddHandler deleteItem.Click, Sub(menuSender As Object, menuEventArgs As EventArgs) MessageBox.Show("Delete: " & proposal.Title)
+
+        contextMenu.Items.Add(viewReviewItem)
+        contextMenu.Items.Add(deleteItem)
+
+        Dim cellBounds As Rectangle = dgvProposals.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, False)
+        Dim menuLocation As Point = dgvProposals.PointToScreen(New Point(cellBounds.Left, cellBounds.Bottom))
+        contextMenu.Show(menuLocation)
+    End Sub
+
+    Private Function FetchProposals() As Boolean
+        Try
+            _proposals = ProposalService.GetAllProposals()
+            Return True
+        Catch ex As Exception
+            MessageBox.Show("Could not load the proposals: " & ex.Message)
+            Return False
+        End Try
+    End Function
+
+    Private Sub RenderGrid(proposalsToShow As List(Of Proposal), selectProposalId As Integer)
         _isLoading = True
 
         Try
             dgvProposals.Rows.Clear()
-            _proposals = ProposalService.GetAllProposals()
 
-            For Each proposal As Proposal In _proposals
+            For Each proposal As Proposal In proposalsToShow
                 Dim rowIndex As Integer = dgvProposals.Rows.Add(
                     proposal.Title,
                     proposal.YearLevel,
@@ -174,9 +317,6 @@ Public Class ucManageProposals
 
                 dgvProposals.Rows(rowIndex).Tag = proposal.ProposalId
             Next
-
-        Catch ex As Exception
-            MessageBox.Show("Could not load the proposals: " & ex.Message)
         Finally
             _isLoading = False
         End Try
@@ -200,6 +340,46 @@ Public Class ucManageProposals
         dgvProposals.ClearSelection()
         dgvProposals.Rows(rowToSelect).Selected = True
         ShowSelectedProposal()
+    End Sub
+
+    Private Sub ApplyFiltersAndSort(selectProposalId As Integer)
+        Dim proposalsToShow As IEnumerable(Of Proposal) = _proposals
+
+        If _activeStatusFilter.HasValue Then
+            proposalsToShow = proposalsToShow.Where(Function(proposal) proposal.Status = _activeStatusFilter.Value)
+        End If
+
+        If cboYearLevelFilter.SelectedIndex > 0 Then
+            Dim selectedYearLevel As String = CStr(cboYearLevelFilter.SelectedItem)
+            proposalsToShow = proposalsToShow.Where(
+                Function(proposal) String.Equals(proposal.YearLevel, selectedYearLevel, StringComparison.Ordinal))
+        End If
+
+        If cboSemesterFilter.SelectedIndex > 0 Then
+            Dim selectedSemester As String = CStr(cboSemesterFilter.SelectedItem)
+            proposalsToShow = proposalsToShow.Where(
+                Function(proposal) String.Equals(proposal.Semester, selectedSemester, StringComparison.Ordinal))
+        End If
+
+        Dim sortedProposals As IEnumerable(Of Proposal)
+        Select Case cboSortBy.SelectedIndex
+            Case 1
+                sortedProposals = proposalsToShow.OrderBy(Function(proposal) proposal.SubmittedAt)
+            Case 2
+                sortedProposals = proposalsToShow.OrderBy(Function(proposal) proposal.Title, StringComparer.Ordinal)
+            Case 3
+                sortedProposals = proposalsToShow.OrderByDescending(Function(proposal) proposal.Title, StringComparer.Ordinal)
+            Case Else
+                sortedProposals = proposalsToShow.OrderByDescending(Function(proposal) proposal.SubmittedAt)
+        End Select
+
+        RenderGrid(sortedProposals.ToList(), selectProposalId)
+    End Sub
+
+    Private Sub LoadProposals(selectProposalId As Integer)
+        If FetchProposals() Then
+            ApplyFiltersAndSort(selectProposalId)
+        End If
     End Sub
 
     Private Sub dgvProposals_SelectionChanged(sender As Object, e As EventArgs) Handles dgvProposals.SelectionChanged
@@ -270,8 +450,6 @@ Public Class ucManageProposals
             detailsText &= vbCrLf & vbCrLf & "Duplicate check unavailable."
         End Try
 
-        txtDetails.Text = detailsText
-
         cboStatus.Text = FormatStatus(proposal.Status)
         txtRemarks.Clear()
     End Sub
@@ -304,7 +482,9 @@ Public Class ucManageProposals
         Try
             ProposalService.ReviewProposal(proposal.ProposalId, newStatus, Session.CurrentUser.UserId, txtRemarks.Text)
             MessageBox.Show("Decision saved.")
-            LoadProposals(proposal.ProposalId)
+            If FetchProposals() Then
+                ApplyFiltersAndSort(proposal.ProposalId)
+            End If
 
         Catch ex As ApplicationException
             MessageBox.Show(ex.Message)
@@ -331,7 +511,10 @@ Public Class ucManageProposals
 
     Private Sub btnRefresh_Click(sender As Object, e As EventArgs) Handles btnRefresh.Click
         Dim current As Proposal = GetSelectedProposal()
-        LoadProposals(If(current IsNot Nothing, current.ProposalId, 0))
+
+        If FetchProposals() Then
+            ApplyFiltersAndSort(If(current IsNot Nothing, current.ProposalId, 0))
+        End If
     End Sub
 
     Public Sub RefreshData()

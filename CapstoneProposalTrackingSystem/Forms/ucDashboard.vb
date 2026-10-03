@@ -2,6 +2,7 @@ Option Strict On
 Option Explicit On
 
 Imports System.Collections.Generic
+Imports System.Drawing.Drawing2D
 
 Public Class ucDashboard
     Inherits UserControl
@@ -171,12 +172,11 @@ Public Class ucDashboard
     End Sub
 
     Private Function CreateSummaryCard(title As String, countLabel As Label, accentColor As Color) As Panel
-        Dim card As New Panel()
+        Dim card As New RoundedCardPanel()
         Dim accentStrip As New Panel()
         Dim titleLabel As New Label()
 
         card.BackColor = SystemColors.Window
-        card.BorderStyle = BorderStyle.FixedSingle
         card.Dock = DockStyle.Fill
         card.Margin = New Padding(8, 8, 8, 8)
 
@@ -204,12 +204,11 @@ Public Class ucDashboard
     End Function
 
     Private Function CreateSectionCard(title As String, accentColor As Color, contentPanel As Panel) As Panel
-        Dim card As New Panel()
+        Dim card As New RoundedCardPanel()
         Dim accentStrip As New Panel()
         Dim headerLabel As New Label()
 
         card.BackColor = SystemColors.Window
-        card.BorderStyle = BorderStyle.FixedSingle
         card.Dock = DockStyle.Fill
 
         accentStrip.Dock = DockStyle.Left
@@ -520,4 +519,65 @@ Public Class ucDashboard
         LoadRecentActivity()
     End Sub
 
+End Class
+
+Friend Class RoundedCardPanel
+    Inherits Panel
+
+    Private Const CornerRadius As Integer = 10
+
+    Public Sub New()
+        Me.BorderStyle = BorderStyle.None
+        Me.SetStyle(
+            ControlStyles.UserPaint Or
+            ControlStyles.AllPaintingInWmPaint Or
+            ControlStyles.OptimizedDoubleBuffer Or
+            ControlStyles.ResizeRedraw,
+            True)
+    End Sub
+
+    Protected Overrides Sub OnSizeChanged(e As EventArgs)
+        MyBase.OnSizeChanged(e)
+
+        If Me.ClientSize.Width <= 0 OrElse Me.ClientSize.Height <= 0 Then
+            Return
+        End If
+
+        Using path As GraphicsPath = CreateRoundedPath(Me.ClientRectangle, CornerRadius)
+            Dim previousRegion As Region = Me.Region
+            Me.Region = New Region(path)
+
+            If previousRegion IsNot Nothing Then
+                previousRegion.Dispose()
+            End If
+        End Using
+    End Sub
+
+    Protected Overrides Sub OnPaintBackground(e As PaintEventArgs)
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias
+
+        Using path As GraphicsPath = CreateRoundedPath(Me.ClientRectangle, CornerRadius)
+            Using brush As New SolidBrush(Me.BackColor)
+                e.Graphics.FillPath(brush, path)
+            End Using
+        End Using
+    End Sub
+
+    Private Shared Function CreateRoundedPath(bounds As Rectangle, radius As Integer) As GraphicsPath
+        Dim path As New GraphicsPath()
+        Dim diameter As Integer = Math.Min(radius * 2, Math.Min(bounds.Width, bounds.Height))
+
+        If diameter <= 0 Then
+            path.AddRectangle(bounds)
+            Return path
+        End If
+
+        path.AddArc(bounds.Left, bounds.Top, diameter, diameter, 180.0F, 90.0F)
+        path.AddArc(bounds.Right - diameter, bounds.Top, diameter, diameter, 270.0F, 90.0F)
+        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0.0F, 90.0F)
+        path.AddArc(bounds.Left, bounds.Bottom - diameter, diameter, diameter, 90.0F, 90.0F)
+        path.CloseFigure()
+
+        Return path
+    End Function
 End Class
