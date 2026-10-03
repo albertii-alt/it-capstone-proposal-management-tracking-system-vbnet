@@ -9,8 +9,12 @@ Public Class ucManageProposals
     Inherits UserControl
 
     Private _proposals As New List(Of Proposal)
+    Private _filteredProposals As New List(Of Proposal)
     Private _isLoading As Boolean = False
     Private _activeStatusFilter As Nullable(Of ProposalStatus) = Nothing
+    Private _currentPageIndex As Integer = 0
+    Private _pageSize As Integer = 25
+    Private _pageControlsReady As Boolean = False
 
     Private WithEvents lblHeader As New Label()
     Private ReadOnly pnlFilterToolbar As New Panel()
@@ -25,6 +29,13 @@ Public Class ucManageProposals
     Private WithEvents cboSemesterFilter As New ComboBox()
     Private WithEvents cboSortBy As New ComboBox()
     Private WithEvents dgvProposals As New DataGridView()
+    Private ReadOnly pnlPagination As New Panel()
+    Private ReadOnly flpPaginationControls As New FlowLayoutPanel()
+    Private WithEvents lblPaginationSummary As New Label()
+    Private WithEvents lblPageIndicator As New Label()
+    Private WithEvents cboPageSize As New ComboBox()
+    Private WithEvents btnPreviousPage As New Button()
+    Private WithEvents btnNextPage As New Button()
     Private ReadOnly colActions As New DataGridViewButtonColumn()
     Private WithEvents lblDetailsField As New Label()
     Private WithEvents txtDetails As New TextBox()
@@ -34,6 +45,7 @@ Public Class ucManageProposals
     Private WithEvents txtRemarks As New TextBox()
     Private WithEvents btnSaveDecision As New Button()
     Private WithEvents btnRefresh As New Button()
+    Private WithEvents btnSubmitProposal As New Button()
 
     Public Sub New()
         InitializeComponent()
@@ -42,6 +54,7 @@ Public Class ucManageProposals
     Private Sub InitializeComponent()
         Dim layout As New TableLayoutPanel()
         Dim headerPanel As New Panel()
+        Dim headerActions As New FlowLayoutPanel()
 
         Me.SuspendLayout()
         Me.AutoScaleMode = AutoScaleMode.Font
@@ -52,11 +65,12 @@ Public Class ucManageProposals
         layout.Dock = DockStyle.Fill
         layout.Padding = New Padding(20)
         layout.ColumnCount = 1
-        layout.RowCount = 3
+        layout.RowCount = 4
         layout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 32.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
         lblHeader.Name = "lblHeader"
         lblHeader.Text = "Manage Proposals"
@@ -67,13 +81,32 @@ Public Class ucManageProposals
         headerPanel.Name = "pnlManageProposalsHeader"
         headerPanel.Dock = DockStyle.Fill
 
+        headerActions.Name = "flpManageProposalHeaderActions"
+        headerActions.Dock = DockStyle.Right
+        headerActions.Width = 280
+        headerActions.FlowDirection = FlowDirection.RightToLeft
+        headerActions.WrapContents = False
+        headerActions.Padding = New Padding(0, 2, 0, 0)
+
         btnRefresh.Name = "btnRefresh"
         btnRefresh.Text = "Refresh"
-        btnRefresh.Size = New Size(110, 28)
-        btnRefresh.Dock = DockStyle.Right
+        btnRefresh.Size = New Size(100, 28)
+        btnRefresh.Margin = New Padding(8, 0, 0, 0)
         btnRefresh.UseVisualStyleBackColor = True
+
+        btnSubmitProposal.Name = "btnSubmitProposal"
+        btnSubmitProposal.Text = "Submit Proposal"
+        btnSubmitProposal.Size = New Size(150, 28)
+        btnSubmitProposal.FlatStyle = FlatStyle.Flat
+        btnSubmitProposal.FlatAppearance.BorderSize = 0
+        btnSubmitProposal.BackColor = Color.FromArgb(246, 201, 69)
+        btnSubmitProposal.ForeColor = Color.FromArgb(122, 31, 46)
+        btnSubmitProposal.UseVisualStyleBackColor = False
+
+        headerActions.Controls.Add(btnRefresh)
+        headerActions.Controls.Add(btnSubmitProposal)
         headerPanel.Controls.Add(lblHeader)
-        headerPanel.Controls.Add(btnRefresh)
+        headerPanel.Controls.Add(headerActions)
 
         pnlFilterToolbar.Name = "pnlFilterToolbar"
         pnlFilterToolbar.Dock = DockStyle.Top
@@ -137,12 +170,67 @@ Public Class ucManageProposals
         dgvProposals.RowHeadersVisible = False
         dgvProposals.SelectionMode = DataGridViewSelectionMode.FullRowSelect
 
+        pnlPagination.Name = "pnlPagination"
+        pnlPagination.Dock = DockStyle.Fill
+        pnlPagination.Height = 44
+        pnlPagination.BackColor = SystemColors.Control
+
+        lblPaginationSummary.Name = "lblPaginationSummary"
+        lblPaginationSummary.Dock = DockStyle.Left
+        lblPaginationSummary.Width = 220
+        lblPaginationSummary.Text = "Showing 0 proposals"
+        lblPaginationSummary.ForeColor = Color.DimGray
+        lblPaginationSummary.TextAlign = ContentAlignment.MiddleLeft
+
+        flpPaginationControls.Name = "flpPaginationControls"
+        flpPaginationControls.Dock = DockStyle.Right
+        flpPaginationControls.Width = 330
+        flpPaginationControls.FlowDirection = FlowDirection.LeftToRight
+        flpPaginationControls.WrapContents = False
+        flpPaginationControls.Padding = New Padding(0, 7, 0, 0)
+
+        cboPageSize.Name = "cboPageSize"
+        cboPageSize.DropDownStyle = ComboBoxStyle.DropDownList
+        cboPageSize.Width = 82
+        cboPageSize.Items.AddRange({10, 25, 50, 100})
+        cboPageSize.SelectedItem = 25
+        cboPageSize.Margin = New Padding(0, 0, 8, 0)
+
+        btnPreviousPage.Name = "btnPreviousPage"
+        btnPreviousPage.Text = "Previous"
+        btnPreviousPage.Size = New Size(78, 28)
+        btnPreviousPage.Enabled = False
+        btnPreviousPage.UseVisualStyleBackColor = True
+        btnPreviousPage.Margin = New Padding(0, 0, 8, 0)
+
+        lblPageIndicator.Name = "lblPageIndicator"
+        lblPageIndicator.Size = New Size(76, 28)
+        lblPageIndicator.Text = "Page 1 of 1"
+        lblPageIndicator.TextAlign = ContentAlignment.MiddleCenter
+        lblPageIndicator.ForeColor = Color.DimGray
+        lblPageIndicator.Margin = New Padding(0, 0, 8, 0)
+
+        btnNextPage.Name = "btnNextPage"
+        btnNextPage.Text = "Next"
+        btnNextPage.Size = New Size(62, 28)
+        btnNextPage.Enabled = False
+        btnNextPage.UseVisualStyleBackColor = True
+
+        flpPaginationControls.Controls.Add(cboPageSize)
+        flpPaginationControls.Controls.Add(btnPreviousPage)
+        flpPaginationControls.Controls.Add(lblPageIndicator)
+        flpPaginationControls.Controls.Add(btnNextPage)
+        pnlPagination.Controls.Add(flpPaginationControls)
+        pnlPagination.Controls.Add(lblPaginationSummary)
+
         layout.Controls.Add(headerPanel, 0, 0)
         layout.Controls.Add(pnlFilterToolbar, 0, 1)
         layout.Controls.Add(dgvProposals, 0, 2)
+        layout.Controls.Add(pnlPagination, 0, 3)
 
         Me.Controls.Add(layout)
         Me.ResumeLayout(False)
+        _pageControlsReady = True
     End Sub
 
     Private Sub ConfigureFilterButton(filterButton As Button, controlName As String, buttonText As String, buttonWidth As Integer, isActive As Boolean)
@@ -217,6 +305,35 @@ Public Class ucManageProposals
 
     Private Sub cboSortBy_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboSortBy.SelectedIndexChanged
         ApplyFiltersAndSort(0)
+    End Sub
+
+    Private Sub cboPageSize_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboPageSize.SelectedIndexChanged
+        If Not _pageControlsReady OrElse cboPageSize.SelectedItem Is Nothing Then
+            Return
+        End If
+
+        _pageSize = CInt(cboPageSize.SelectedItem)
+        _currentPageIndex = 0
+        RenderCurrentPage(0)
+    End Sub
+
+    Private Sub btnPreviousPage_Click(sender As Object, e As EventArgs) Handles btnPreviousPage.Click
+        If _currentPageIndex <= 0 Then
+            Return
+        End If
+
+        _currentPageIndex -= 1
+        RenderCurrentPage(0)
+    End Sub
+
+    Private Sub btnNextPage_Click(sender As Object, e As EventArgs) Handles btnNextPage.Click
+        Dim totalPages As Integer = CInt(Math.Ceiling(_filteredProposals.Count / CDbl(_pageSize)))
+        If _currentPageIndex >= totalPages - 1 Then
+            Return
+        End If
+
+        _currentPageIndex += 1
+        RenderCurrentPage(0)
     End Sub
 
     Private Sub ucManageProposals_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -459,7 +576,42 @@ Public Class ucManageProposals
                 sortedProposals = proposalsToShow.OrderByDescending(Function(proposal) proposal.SubmittedAt)
         End Select
 
-        RenderGrid(sortedProposals.ToList(), selectProposalId)
+        _filteredProposals = sortedProposals.ToList()
+
+        If selectProposalId = 0 Then
+            _currentPageIndex = 0
+        Else
+            Dim selectedIndex As Integer = _filteredProposals.FindIndex(Function(proposal) proposal.ProposalId = selectProposalId)
+            If selectedIndex >= 0 Then
+                _currentPageIndex = selectedIndex \ _pageSize
+            End If
+        End If
+
+        RenderCurrentPage(selectProposalId)
+    End Sub
+
+    Private Sub RenderCurrentPage(selectProposalId As Integer)
+        Dim totalCount As Integer = _filteredProposals.Count
+        Dim totalPages As Integer = CInt(Math.Ceiling(totalCount / CDbl(_pageSize)))
+        _currentPageIndex = Math.Max(0, Math.Min(_currentPageIndex, Math.Max(0, totalPages - 1)))
+
+        Dim firstIndex As Integer = _currentPageIndex * _pageSize
+        Dim pageProposals As List(Of Proposal) = _filteredProposals.Skip(firstIndex).Take(_pageSize).ToList()
+        RenderGrid(pageProposals, selectProposalId)
+
+        If totalCount = 0 Then
+            lblPaginationSummary.Text = "Showing 0 proposals"
+            lblPageIndicator.Text = "Page 0 of 0"
+        Else
+            Dim firstDisplayed As Integer = firstIndex + 1
+            Dim lastDisplayed As Integer = Math.Min(firstIndex + _pageSize, totalCount)
+            lblPaginationSummary.Text = "Showing " & firstDisplayed.ToString() & "-" & lastDisplayed.ToString() &
+                                        " of " & totalCount.ToString() & " proposals"
+            lblPageIndicator.Text = "Page " & (_currentPageIndex + 1).ToString() & " of " & totalPages.ToString()
+        End If
+
+        btnPreviousPage.Enabled = _currentPageIndex > 0
+        btnNextPage.Enabled = _currentPageIndex < totalPages - 1
     End Sub
 
     Private Sub LoadProposals(selectProposalId As Integer)
@@ -600,6 +752,15 @@ Public Class ucManageProposals
 
         If FetchProposals() Then
             ApplyFiltersAndSort(If(current IsNot Nothing, current.ProposalId, 0))
+        End If
+    End Sub
+
+    Private Sub btnSubmitProposal_Click(sender As Object, e As EventArgs) Handles btnSubmitProposal.Click
+        Dim submitForm As New frmSubmitProposal()
+        submitForm.ShowDialog()
+
+        If FetchProposals() Then
+            ApplyFiltersAndSort(0)
         End If
     End Sub
 
