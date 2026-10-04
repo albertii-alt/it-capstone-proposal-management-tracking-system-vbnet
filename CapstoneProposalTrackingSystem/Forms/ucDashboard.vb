@@ -4,20 +4,26 @@ Option Explicit On
 Imports System.Collections.Generic
 Imports System.Drawing.Drawing2D
 Imports System.IO
+Imports System.Linq
+Imports ScottPlot.WinForms
 
 Public Class ucDashboard
     Inherits UserControl
 
     Public Event ProfileRequested As EventHandler
+    Public Event DuplicateReviewRequested As EventHandler
+    Public Event ActivityRequested As EventHandler
 
     Private ReadOnly lblWelcome As New Label()
     Private ReadOnly lblSubheading As New Label()
     Private ReadOnly picAdminProfile As New PictureBox()
+    Private ReadOnly lblNotificationBell As New Label()
     Private ReadOnly lblDashboardDate As New Label()
     Private ReadOnly lblDashboardTime As New Label()
     Private ReadOnly _clockTimer As New Timer()
     Private ReadOnly pnlDuplicateRisks As New Panel()
     Private ReadOnly pnlRecentActivity As New Panel()
+    Private ReadOnly plotStatusTrend As New FormsPlot()
     Friend ReadOnly lblPendingCount As New Label()
     Friend ReadOnly lblApprovedCount As New Label()
     Friend ReadOnly lblRevisionCount As New Label()
@@ -57,7 +63,7 @@ Public Class ucDashboard
         dashboardLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         dashboardLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
         dashboardLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 140.0F))
-        dashboardLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 16.0F))
+        dashboardLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 300.0F))
         dashboardLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         headerLayout.Name = "tlpDashboardHeader"
@@ -95,12 +101,13 @@ Public Class ucDashboard
 
         headerMeta.Name = "tlpDashboardMeta"
         headerMeta.Dock = DockStyle.Fill
-        headerMeta.ColumnCount = 5
+        headerMeta.ColumnCount = 6
         headerMeta.RowCount = 1
         headerMeta.Padding = New Padding(0, 4, 4, 0)
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 104.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 116.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 40.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 56.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 160.0F))
         headerMeta.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
@@ -120,6 +127,18 @@ Public Class ucDashboard
         End Using
         AddHandler picAdminProfile.Paint, AddressOf picAdminProfile_Paint
         AddHandler picAdminProfile.Click, AddressOf picAdminProfile_Click
+
+        lblNotificationBell.Name = "lblDashboardNotificationBell"
+        lblNotificationBell.Dock = DockStyle.Fill
+        lblNotificationBell.Margin = New Padding(0)
+        lblNotificationBell.ForeColor = Color.FromArgb(122, 31, 46)
+        lblNotificationBell.BackColor = Color.Transparent
+        lblNotificationBell.Cursor = Cursors.Default
+        lblNotificationBell.AccessibleName = "Notifications"
+        lblNotificationBell.AccessibleDescription = "Notifications will be available here in a future update."
+        Dim notificationTip As New ToolTip()
+        notificationTip.SetToolTip(lblNotificationBell, "Notifications (coming soon)")
+        AddHandler lblNotificationBell.Paint, AddressOf lblNotificationBell_Paint
 
         adminLabel.Name = "lblDashboardAdmin"
         adminLabel.Dock = DockStyle.Fill
@@ -169,8 +188,9 @@ Public Class ucDashboard
 
         headerMeta.Controls.Add(lblDashboardDate, 1, 0)
         headerMeta.Controls.Add(lblDashboardTime, 2, 0)
-        headerMeta.Controls.Add(picAdminProfile, 3, 0)
-        headerMeta.Controls.Add(identityLayout, 4, 0)
+        headerMeta.Controls.Add(lblNotificationBell, 3, 0)
+        headerMeta.Controls.Add(picAdminProfile, 4, 0)
+        headerMeta.Controls.Add(identityLayout, 5, 0)
         headerLayout.Controls.Add(headerTextLayout, 0, 0)
         headerLayout.Controls.Add(headerMeta, 1, 0)
         lblPendingCount.Name = "lblPendingCount"
@@ -194,6 +214,8 @@ Public Class ucDashboard
         cardsLayout.Controls.Add(CreateSummaryCard("Approved", lblApprovedCount, Color.FromArgb(76, 154, 106)), 1, 0)
         cardsLayout.Controls.Add(CreateSummaryCard("For Revision", lblRevisionCount, Color.FromArgb(201, 138, 43)), 2, 0)
         cardsLayout.Controls.Add(CreateSummaryCard("Rejected", lblRejectedCount, Color.FromArgb(166, 58, 58)), 3, 0)
+
+        ConfigureStatusTrendChart()
 
         pnlDuplicateRisks.Name = "pnlDuplicateRisks"
         pnlDuplicateRisks.Dock = DockStyle.Fill
@@ -219,19 +241,27 @@ Public Class ucDashboard
         Dim duplicateRiskCard As Panel = CreateSectionCard(
             "Pending Proposals Needing Duplicate Review",
             Color.FromArgb(201, 138, 43),
-            pnlDuplicateRisks)
+            pnlDuplicateRisks,
+            "View all",
+            AddressOf DuplicateReviewViewAll_Click)
         duplicateRiskCard.Margin = New Padding(0, 0, 12, 0)
         sectionCardsLayout.Controls.Add(duplicateRiskCard, 0, 0)
 
         Dim recentActivityCard As Panel = CreateSectionCard(
             "Recent Activity",
             Color.FromArgb(122, 31, 46),
-            pnlRecentActivity)
+            pnlRecentActivity,
+            "View all",
+            AddressOf ActivityViewAll_Click)
         recentActivityCard.Margin = New Padding(12, 0, 0, 0)
         sectionCardsLayout.Controls.Add(recentActivityCard, 1, 0)
 
         dashboardLayout.Controls.Add(headerLayout, 0, 0)
         dashboardLayout.Controls.Add(cardsLayout, 0, 1)
+        dashboardLayout.Controls.Add(CreateSectionCard(
+            "Proposal Status Trend",
+            Color.FromArgb(122, 31, 46),
+            plotStatusTrend), 0, 2)
         dashboardLayout.Controls.Add(sectionCardsLayout, 0, 3)
 
         Me.Controls.Add(dashboardLayout)
@@ -265,6 +295,29 @@ Public Class ucDashboard
             picAdminProfile.ClientRectangle,
             picAdminProfile.ForeColor,
             TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter)
+    End Sub
+
+    Private Sub lblNotificationBell_Paint(sender As Object, e As PaintEventArgs)
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias
+        Dim bellOffsetX As Integer = Math.Max(0, (lblNotificationBell.ClientSize.Width - 40) \ 2)
+        Dim bellOffsetY As Integer = Math.Max(0, (lblNotificationBell.ClientSize.Height - 32) \ 2)
+        e.Graphics.TranslateTransform(bellOffsetX, bellOffsetY)
+
+        Dim bellColor As Color = Color.FromArgb(122, 31, 46)
+        Using bellBrush As New SolidBrush(bellColor)
+            Dim bellBody As Point() = {
+                New Point(14, 25), New Point(17, 21), New Point(18, 12),
+                New Point(21, 7), New Point(25, 5), New Point(29, 7),
+                New Point(32, 12), New Point(33, 21), New Point(36, 25)}
+            e.Graphics.FillPolygon(bellBrush, bellBody)
+            e.Graphics.FillEllipse(bellBrush, 22, 25, 6, 4)
+            e.Graphics.FillRectangle(bellBrush, 17, 22, 16, 4)
+        End Using
+
+        Using clapperBrush As New SolidBrush(Color.FromArgb(246, 201, 69))
+            e.Graphics.FillEllipse(clapperBrush, 24, 26, 3, 2)
+        End Using
+        e.Graphics.ResetTransform()
     End Sub
 
     Private Shared Function GetRoleDisplayName(role As UserRole) As String
@@ -337,9 +390,15 @@ Public Class ucDashboard
         Return card
     End Function
 
-    Private Function CreateSectionCard(title As String, accentColor As Color, contentPanel As Panel) As Panel
+    Private Function CreateSectionCard(
+            title As String,
+            accentColor As Color,
+            contentPanel As Control,
+            Optional actionText As String = Nothing,
+            Optional actionHandler As EventHandler = Nothing) As Panel
         Dim card As New RoundedCardPanel()
         Dim accentStrip As New Panel()
+        Dim headerLayout As New TableLayoutPanel()
         Dim headerLabel As New Label()
 
         card.BackColor = SystemColors.Window
@@ -349,23 +408,56 @@ Public Class ucDashboard
         accentStrip.Width = 4
         accentStrip.BackColor = accentColor
 
+        headerLayout.Dock = DockStyle.Top
+        headerLayout.Height = 36
+        headerLayout.Padding = New Padding(16, 0, 10, 0)
+        headerLayout.ColumnCount = 2
+        headerLayout.RowCount = 1
+        headerLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        headerLayout.ColumnStyles.Add(New ColumnStyle(SizeType.AutoSize))
+        headerLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+
         headerLabel.AutoSize = False
-        headerLabel.Dock = DockStyle.Top
-        headerLabel.Height = 36
-        headerLabel.Padding = New Padding(16, 0, 0, 0)
+        headerLabel.Dock = DockStyle.Fill
         headerLabel.Text = title
         headerLabel.Font = New Font("Segoe UI", 10.5F, FontStyle.Bold)
         headerLabel.ForeColor = Color.FromArgb(40, 40, 40)
         headerLabel.TextAlign = ContentAlignment.MiddleLeft
 
+        headerLayout.Controls.Add(headerLabel, 0, 0)
+        If actionHandler IsNot Nothing Then
+            Dim actionButton As New Button()
+            actionButton.AutoSize = True
+            actionButton.AutoSizeMode = AutoSizeMode.GrowAndShrink
+            actionButton.Dock = DockStyle.Fill
+            actionButton.FlatStyle = FlatStyle.Flat
+            actionButton.FlatAppearance.BorderSize = 0
+            actionButton.BackColor = Color.Transparent
+            actionButton.Cursor = Cursors.Hand
+            actionButton.Font = New Font("Segoe UI", 8.5F, FontStyle.Regular)
+            actionButton.ForeColor = Color.FromArgb(122, 31, 46)
+            actionButton.Padding = New Padding(6, 0, 6, 0)
+            actionButton.Text = actionText
+            AddHandler actionButton.Click, actionHandler
+            headerLayout.Controls.Add(actionButton, 1, 0)
+        End If
+
         contentPanel.Dock = DockStyle.Fill
 
         card.Controls.Add(contentPanel)
-        card.Controls.Add(headerLabel)
+        card.Controls.Add(headerLayout)
         card.Controls.Add(accentStrip)
 
         Return card
     End Function
+
+    Private Sub DuplicateReviewViewAll_Click(sender As Object, e As EventArgs)
+        RaiseEvent DuplicateReviewRequested(Me, EventArgs.Empty)
+    End Sub
+
+    Private Sub ActivityViewAll_Click(sender As Object, e As EventArgs)
+        RaiseEvent ActivityRequested(Me, EventArgs.Empty)
+    End Sub
 
     Private Function CreateRiskHeader() As TableLayoutPanel
         Dim header As New TableLayoutPanel()
@@ -652,8 +744,69 @@ Public Class ucDashboard
         End If
 
         LoadCounts()
+        LoadStatusTrend()
         LoadDuplicateRisks()
         LoadRecentActivity()
+    End Sub
+
+    Private Sub ConfigureStatusTrendChart()
+        plotStatusTrend.Name = "plotStatusTrend"
+        plotStatusTrend.Dock = DockStyle.Fill
+        plotStatusTrend.Padding = New Padding(8, 2, 8, 8)
+        plotStatusTrend.Margin = New Padding(10, 0, 10, 6)
+        plotStatusTrend.Plot.FigureBackground.Color = ScottPlot.Color.FromColor(SystemColors.Window)
+        plotStatusTrend.Plot.DataBackground.Color = ScottPlot.Color.FromColor(SystemColors.Window)
+        plotStatusTrend.Plot.Axes.Left.Min = 0
+        plotStatusTrend.Plot.Axes.Left.MajorTickStyle.Length = 0
+        plotStatusTrend.Plot.Axes.Bottom.MajorTickStyle.Length = 0
+        plotStatusTrend.Plot.Axes.Margins(0.02, 0.15)
+    End Sub
+
+    Private Sub LoadStatusTrend()
+        Try
+            Dim proposals As List(Of Proposal) = ProposalService.GetAllProposals()
+            Dim firstMonth As DateTime = New DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-5)
+            Dim months As DateTime() = Enumerable.Range(0, 6).Select(Function(index) firstMonth.AddMonths(index)).ToArray()
+            Dim monthLabels As String() = months.Select(Function(month) month.ToString("MMM")).ToArray()
+            Dim xValues As Double() = Enumerable.Range(0, 6).Select(Function(index) CDbl(index)).ToArray()
+
+            plotStatusTrend.Plot.Clear()
+            AddStatusTrendSeries(plotStatusTrend, proposals, months, xValues, ProposalStatus.Pending,
+                                 "Pending", Color.FromArgb(201, 138, 43))
+            AddStatusTrendSeries(plotStatusTrend, proposals, months, xValues, ProposalStatus.Approved,
+                                 "Approved", Color.FromArgb(76, 154, 106))
+            AddStatusTrendSeries(plotStatusTrend, proposals, months, xValues, ProposalStatus.ForRevision,
+                                 "For Revision", Color.FromArgb(218, 169, 55))
+            AddStatusTrendSeries(plotStatusTrend, proposals, months, xValues, ProposalStatus.Rejected,
+                                 "Rejected", Color.FromArgb(166, 58, 58))
+            plotStatusTrend.Plot.Axes.Bottom.SetTicks(xValues, monthLabels)
+            plotStatusTrend.Plot.Axes.Left.Label.Text = "Proposals"
+            plotStatusTrend.Plot.Legend.IsVisible = True
+            plotStatusTrend.Plot.Legend.Alignment = ScottPlot.Alignment.UpperLeft
+            plotStatusTrend.Refresh()
+        Catch ex As Exception
+            MessageBox.Show("Could not load the proposal status trend: " & ex.Message)
+        End Try
+    End Sub
+
+    Private Shared Sub AddStatusTrendSeries(
+            chart As FormsPlot,
+            proposals As List(Of Proposal),
+            months As DateTime(),
+            xValues As Double(),
+            status As ProposalStatus,
+            label As String,
+            color As Color)
+        Dim yValues As Double() = months.Select(
+            Function(month) CDbl(proposals.Where(
+                Function(proposal) proposal.Status = status AndAlso
+                    proposal.SubmittedAt.Year = month.Year AndAlso
+                    proposal.SubmittedAt.Month = month.Month).Count())).ToArray()
+        Dim scatter = chart.Plot.Add.Scatter(xValues, yValues)
+        scatter.LegendText = label
+        scatter.Color = ScottPlot.Color.FromColor(color)
+        scatter.MarkerSize = 7
+        scatter.LineWidth = 2.5F
     End Sub
 
 End Class

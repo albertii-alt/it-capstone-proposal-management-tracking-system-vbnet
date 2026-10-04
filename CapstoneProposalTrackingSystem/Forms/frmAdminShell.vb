@@ -262,11 +262,21 @@ Public Class frmAdminShell
     Private Sub btnNavDashboard_Click(sender As Object, e As EventArgs)
         Dim dashboard As New ucDashboard()
         AddHandler dashboard.ProfileRequested, AddressOf ucDashboard_ProfileRequested
+        AddHandler dashboard.DuplicateReviewRequested, AddressOf ucDashboard_DuplicateReviewRequested
+        AddHandler dashboard.ActivityRequested, AddressOf ucDashboard_ActivityRequested
         LoadContent(dashboard, btnNavDashboard)
     End Sub
 
     Private Sub ucDashboard_ProfileRequested(sender As Object, e As EventArgs)
         btnNavProfile.PerformClick()
+    End Sub
+
+    Private Sub ucDashboard_DuplicateReviewRequested(sender As Object, e As EventArgs)
+        btnNavManageProposals.PerformClick()
+    End Sub
+
+    Private Sub ucDashboard_ActivityRequested(sender As Object, e As EventArgs)
+        btnNavActivityLogs.PerformClick()
     End Sub
 
     Private Sub btnNavManageProposals_Click(sender As Object, e As EventArgs)
