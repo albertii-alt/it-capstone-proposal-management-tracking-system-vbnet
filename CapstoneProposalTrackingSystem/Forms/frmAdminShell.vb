@@ -12,6 +12,7 @@ Public Class frmAdminShell
     Private ReadOnly pnlContent As New Panel()
     Private ReadOnly pnlLogoTopSpacer As New Panel()
     Private ReadOnly pnlNavigationTopSpacer As New Panel()
+    Private ReadOnly pnlLogoutBottomSpacer As New Panel()
     Private ReadOnly picLogo As New PictureBox()
     Private ReadOnly lblAppName As New Label()
     Private ReadOnly btnNavDashboard As New Button()
@@ -106,7 +107,7 @@ Public Class frmAdminShell
         btnNavLogout.Name = "btnNavLogout"
         btnNavLogout.Text = "   Logout"
         btnNavLogout.Dock = DockStyle.Bottom
-        btnNavLogout.Height = 40
+        btnNavLogout.Height = 48
         btnNavLogout.FlatStyle = FlatStyle.Flat
         btnNavLogout.FlatAppearance.BorderSize = 0
         btnNavLogout.TextAlign = ContentAlignment.MiddleLeft
@@ -117,7 +118,13 @@ Public Class frmAdminShell
         btnNavLogout.BackColor = _sidebarColor
         btnNavLogout.ForeColor = Color.FromArgb(242, 166, 166)
 
+        pnlLogoutBottomSpacer.Name = "pnlLogoutBottomSpacer"
+        pnlLogoutBottomSpacer.Dock = DockStyle.Bottom
+        pnlLogoutBottomSpacer.Height = 12
+        pnlLogoutBottomSpacer.BackColor = _sidebarColor
+
         pnlSidebar.Controls.Add(btnNavLogout)
+        pnlSidebar.Controls.Add(pnlLogoutBottomSpacer)
         pnlSidebar.Controls.Add(btnNavProfile)
         pnlSidebar.Controls.Add(btnNavSecurityLogs)
         pnlSidebar.Controls.Add(btnNavLoginActivity)
@@ -154,7 +161,7 @@ Public Class frmAdminShell
         navButton.Name = controlName
         navButton.Text = "   " & buttonText
         navButton.Dock = DockStyle.Top
-        navButton.Height = 40
+        navButton.Height = 46
         navButton.FlatStyle = FlatStyle.Flat
         navButton.FlatAppearance.BorderSize = 0
         navButton.TextAlign = ContentAlignment.MiddleLeft
@@ -168,7 +175,7 @@ Public Class frmAdminShell
     End Sub
 
     Private Function CreateNavIcon(iconGlyph As String, iconColor As Color) As Bitmap
-        Dim icon As New Bitmap(24, 24)
+        Dim icon As New Bitmap(28, 28)
 
         Using graphics As Graphics = Graphics.FromImage(icon)
             graphics.Clear(Color.Transparent)
@@ -180,7 +187,7 @@ Public Class frmAdminShell
                     New Rectangle(0, 0, icon.Width, icon.Height),
                     iconColor,
                     Color.Transparent,
-                    TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or TextFormatFlags.NoPadding)
+                    TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter)
             End Using
         End Using
 

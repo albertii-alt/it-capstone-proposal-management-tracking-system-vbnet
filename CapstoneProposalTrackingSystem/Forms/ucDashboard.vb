@@ -64,8 +64,8 @@ Public Class ucDashboard
         headerLayout.Dock = DockStyle.Fill
         headerLayout.ColumnCount = 2
         headerLayout.RowCount = 1
-        headerLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 65.0F))
-        headerLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 35.0F))
+        headerLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 60.0F))
+        headerLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 40.0F))
         headerLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         headerTextLayout.Name = "tlpDashboardHeaderText"
@@ -95,19 +95,19 @@ Public Class ucDashboard
 
         headerMeta.Name = "tlpDashboardMeta"
         headerMeta.Dock = DockStyle.Fill
-        headerMeta.ColumnCount = 5
+        headerMeta.ColumnCount = 4
         headerMeta.RowCount = 1
         headerMeta.Padding = New Padding(0, 4, 4, 0)
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 25.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 88.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 82.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 48.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 75.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 104.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 116.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 56.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         headerMeta.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         picAdminProfile.Name = "picDashboardAdminProfile"
         picAdminProfile.Size = New Size(40, 40)
-        picAdminProfile.Margin = New Padding(0, 2, 4, 0)
+        picAdminProfile.Margin = New Padding(4, 2, 10, 0)
+        picAdminProfile.Anchor = AnchorStyles.None
         picAdminProfile.SizeMode = PictureBoxSizeMode.Zoom
         picAdminProfile.Cursor = Cursors.Hand
         picAdminProfile.BackColor = Color.FromArgb(122, 31, 46)
@@ -141,32 +141,35 @@ Public Class ucDashboard
         identityLayout.ColumnCount = 1
         identityLayout.RowCount = 2
         identityLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        identityLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 55.0F))
-        identityLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 45.0F))
+        identityLayout.Padding = New Padding(8, 18, 0, 18)
+        identityLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 26.0F))
+        identityLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 22.0F))
         identityLayout.Controls.Add(adminLabel, 0, 0)
         identityLayout.Controls.Add(roleLabel, 0, 1)
 
         lblDashboardDate.Name = "lblDashboardDate"
         lblDashboardDate.Dock = DockStyle.Fill
         lblDashboardDate.Text = DateTime.Now.ToString("MMM d, yyyy")
-        lblDashboardDate.Font = New Font("Segoe UI", 8.0F, FontStyle.Regular)
+        lblDashboardDate.Font = New Font("Segoe UI", 8.5F, FontStyle.Regular)
         lblDashboardDate.ForeColor = Color.DimGray
+        lblDashboardDate.AutoSize = False
         lblDashboardDate.TextAlign = ContentAlignment.MiddleRight
 
         lblDashboardTime.Name = "lblDashboardTime"
         lblDashboardTime.Dock = DockStyle.Fill
         lblDashboardTime.Text = DateTime.Now.ToString("hh:mm:ss tt")
-        lblDashboardTime.Font = New Font("Segoe UI", 8.0F, FontStyle.Regular)
+        lblDashboardTime.Font = New Font("Segoe UI", 8.5F, FontStyle.Regular)
         lblDashboardTime.ForeColor = Color.DimGray
+        lblDashboardTime.AutoSize = False
         lblDashboardTime.TextAlign = ContentAlignment.MiddleLeft
         lblDashboardTime.Padding = New Padding(6, 0, 0, 0)
 
         LoadDashboardProfilePhoto()
 
-        headerMeta.Controls.Add(lblDashboardDate, 1, 0)
-        headerMeta.Controls.Add(lblDashboardTime, 2, 0)
-        headerMeta.Controls.Add(picAdminProfile, 3, 0)
-        headerMeta.Controls.Add(identityLayout, 4, 0)
+        headerMeta.Controls.Add(lblDashboardDate, 0, 0)
+        headerMeta.Controls.Add(lblDashboardTime, 1, 0)
+        headerMeta.Controls.Add(picAdminProfile, 2, 0)
+        headerMeta.Controls.Add(identityLayout, 3, 0)
         headerLayout.Controls.Add(headerTextLayout, 0, 0)
         headerLayout.Controls.Add(headerMeta, 1, 0)
         lblPendingCount.Name = "lblPendingCount"
