@@ -365,13 +365,13 @@ Public Class ucTitleArchive
         Dim sortedTitles As IEnumerable(Of ArchivedTitle)
         Select Case cboSortBy.SelectedIndex
             Case 1
-                sortedTitles = titlesToShow.OrderBy(Function(title) title.SubmittedAt)
+                sortedTitles = titlesToShow.OrderBy(Function(title) title.ApprovedAt)
             Case 2
                 sortedTitles = titlesToShow.OrderBy(Function(title) title.Title, StringComparer.Ordinal)
             Case 3
                 sortedTitles = titlesToShow.OrderByDescending(Function(title) title.Title, StringComparer.Ordinal)
             Case Else
-                sortedTitles = titlesToShow.OrderByDescending(Function(title) title.SubmittedAt)
+                sortedTitles = titlesToShow.OrderByDescending(Function(title) title.ApprovedAt)
         End Select
 
         _filteredArchivedTitles = sortedTitles.ToList()
