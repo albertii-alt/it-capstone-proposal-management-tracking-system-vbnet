@@ -598,6 +598,9 @@ Public Class ucReports
                                                    "Proposal report",
                                                    "Exported the proposal report to CSV.",
                                                    "File: " & saveDialog.FileName)
+                    SecurityLogService.Record(Session.CurrentUser.UserId, Session.CurrentUser.Username,
+                                              "Sensitive Export",
+                                              "Exported the proposal report to CSV. File: " & saveDialog.FileName)
                 End If
                 MessageBox.Show("Report exported successfully to:" & Environment.NewLine & saveDialog.FileName)
             Catch ex As Exception

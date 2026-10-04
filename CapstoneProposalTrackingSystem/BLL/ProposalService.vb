@@ -107,6 +107,8 @@ Public Class ProposalService
                                            deletedCount.ToString() & " archived title(s)",
                                            "Deleted " & deletedCount.ToString() & " archived title(s).",
                                            "Archive IDs: " & String.Join(", ", archiveIds))
+            SecurityLogService.Record(actor.UserId, actor.Username, "Bulk Deletion",
+                                      "Deleted " & deletedCount.ToString() & " archived title(s).")
         End If
         Return deletedCount
     End Function
@@ -137,6 +139,8 @@ Public Class ProposalService
         If deleted Then
             AdminActivityLogService.Record(actor, "Deleted", "Proposal", proposalId, proposal.Title,
                                            "Deleted the proposal """ & proposal.Title & """.")
+            SecurityLogService.Record(actor.UserId, actor.Username, "Sensitive Deletion",
+                                      "Deleted the proposal """ & proposal.Title & """.")
         End If
         Return deleted
     End Function

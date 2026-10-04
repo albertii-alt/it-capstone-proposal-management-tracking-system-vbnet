@@ -96,6 +96,10 @@ Public Class UserService
             AdminActivityLogService.Record(actor, "Updated", "Profile", actor.UserId, actor.FullName,
                                            changedDescription,
                                            "Changed fields: " & String.Join(", ", changedFields))
+            If changedFields.Count > 0 Then
+                SecurityLogService.Record(actor.UserId, actor.Username, "Profile Security Change",
+                                          "Changed administrator profile fields: " & String.Join(", ", changedFields) & ".")
+            End If
         End If
     End Sub
 
@@ -151,6 +155,8 @@ Public Class UserService
         If actor IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(actor.Role) Then
             AdminActivityLogService.Record(actor, "Changed Password", "Profile", actor.UserId, actor.FullName,
                                            "Changed the administrator account password.")
+            SecurityLogService.Record(actor.UserId, actor.Username, "Password Changed",
+                                      "The administrator changed their account password.")
         End If
     End Sub
 
@@ -181,6 +187,8 @@ Public Class UserService
             Dim actor As User = UserDAL.GetUserById(currentAdminUserId)
             AdminActivityLogService.Record(actor, "Created", "Account", newUserId, newUser.FullName,
                                            "Created the " & newUser.Role.ToString() & " account for " & newUser.FullName & ".")
+            SecurityLogService.Record(actor.UserId, actor.Username, "Account Created",
+                                       "Created the " & newUser.Role.ToString() & " account for " & newUser.FullName & ".")
         End If
         Return newUserId
     End Function
@@ -208,6 +216,8 @@ Public Class UserService
             Throw New ApplicationException("The Super Admin role can only be assigned through the protected setup process.")
         End If
 
+        Dim changedUsername As Boolean = Not String.Equals(targetUser.Username, username.Trim(), StringComparison.Ordinal)
+        Dim changedEmail As Boolean = Not String.Equals(targetUser.Email, email.Trim(), StringComparison.OrdinalIgnoreCase)
         UserDAL.UpdateUser(New User With {
             .UserId = userId,
             .Username = username.Trim(),
@@ -220,6 +230,18 @@ Public Class UserService
         AdminActivityLogService.Record(actorForLog, "Updated", "Account", targetUser.UserId, targetUser.FullName,
                                        "Updated the account details for " & targetUser.FullName & ".",
                                        "Role: " & targetUser.Role.ToString() & " -> " & role.ToString())
+        If targetUser.Role <> role Then
+            SecurityLogService.Record(actorForLog.UserId, actorForLog.Username, "Role Changed",
+                                       "Changed " & targetUser.FullName & "'s role from " &
+                                       targetUser.Role.ToString() & " to " & role.ToString() & ".")
+        End If
+        If changedUsername OrElse changedEmail Then
+            Dim changedFields As New List(Of String)
+            If changedUsername Then changedFields.Add("username")
+            If changedEmail Then changedFields.Add("email")
+            SecurityLogService.Record(actorForLog.UserId, actorForLog.Username, "Account Security Change",
+                                       "Changed " & targetUser.FullName & "'s " & String.Join(" and ", changedFields) & ".")
+        End If
     End Sub
 
     Public Shared Sub ResetPassword(userId As Integer, newPlainPassword As String, currentAdminUserId As Integer)
@@ -243,6 +265,8 @@ Public Class UserService
         Dim actorForLog As User = UserDAL.GetUserById(currentAdminUserId)
         AdminActivityLogService.Record(actorForLog, "Reset Password", "Account", targetUser.UserId, targetUser.FullName,
                                        "Reset the password for " & targetUser.FullName & ".")
+        SecurityLogService.Record(actorForLog.UserId, actorForLog.Username, "Password Reset",
+                                  "Reset the password for " & targetUser.FullName & ".")
     End Sub
 
     Public Shared Sub SetUserActive(userId As Integer, isActive As Boolean, currentAdminUserId As Integer)
@@ -264,6 +288,9 @@ Public Class UserService
         AdminActivityLogService.Record(actorForLog, If(isActive, "Activated", "Deactivated"), "Account",
                                        targetUser.UserId, targetUser.FullName,
                                        If(isActive, "Activated ", "Deactivated ") & targetUser.FullName & "'s account.")
+        SecurityLogService.Record(actorForLog.UserId, actorForLog.Username,
+                                  If(isActive, "Account Activated", "Account Deactivated"),
+                                  If(isActive, "Activated ", "Deactivated ") & targetUser.FullName & "'s account.")
     End Sub
 
     Public Shared Sub DeleteUser(userId As Integer, currentAdminUserId As Integer)
@@ -288,6 +315,8 @@ Public Class UserService
         Dim actorForLog As User = UserDAL.GetUserById(currentAdminUserId)
         AdminActivityLogService.Record(actorForLog, "Deleted", "Account", targetUser.UserId, targetUser.FullName,
                                        "Deleted the account for " & targetUser.FullName & ".")
+        SecurityLogService.Record(actorForLog.UserId, actorForLog.Username, "Account Deleted",
+                                  "Deleted the account for " & targetUser.FullName & ".")
     End Sub
 
 End Class

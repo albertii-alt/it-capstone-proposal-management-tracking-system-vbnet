@@ -19,6 +19,7 @@ Public Class frmAdminShell
     Private ReadOnly btnNavManageAccounts As New Button()
     Private ReadOnly btnNavActivityLogs As New Button()
     Private ReadOnly btnNavLoginActivity As New Button()
+    Private ReadOnly btnNavSecurityLogs As New Button()
     Private ReadOnly btnNavProfile As New Button()
     Private ReadOnly btnNavLogout As New Button()
     Private ReadOnly sessionTimer As New Timer With {.Interval = 30000}
@@ -33,6 +34,7 @@ Public Class frmAdminShell
         AddHandler btnNavManageAccounts.Click, AddressOf btnNavManageAccounts_Click
         AddHandler btnNavActivityLogs.Click, AddressOf btnNavActivityLogs_Click
         AddHandler btnNavLoginActivity.Click, AddressOf btnNavLoginActivity_Click
+        AddHandler btnNavSecurityLogs.Click, AddressOf btnNavSecurityLogs_Click
         AddHandler btnNavProfile.Click, AddressOf btnNavProfile_Click
         AddHandler btnNavLogout.Click, AddressOf btnNavLogout_Click
         AddHandler MyBase.Load, AddressOf frmAdminShell_Load
@@ -85,6 +87,7 @@ Public Class frmAdminShell
         ConfigureNavButton(btnNavManageAccounts, "btnNavManageAccounts", "Manage Accounts")
         ConfigureNavButton(btnNavActivityLogs, "btnNavActivityLogs", "Activity Logs")
         ConfigureNavButton(btnNavLoginActivity, "btnNavLoginActivity", "My Login Activity")
+        ConfigureNavButton(btnNavSecurityLogs, "btnNavSecurityLogs", "Security Logs")
         ConfigureNavButton(btnNavProfile, "btnNavProfile", "Profile")
 
         btnNavLogout.Name = "btnNavLogout"
@@ -103,6 +106,7 @@ Public Class frmAdminShell
         pnlSidebar.Controls.Add(btnNavManageAccounts)
         pnlSidebar.Controls.Add(btnNavActivityLogs)
         pnlSidebar.Controls.Add(btnNavLoginActivity)
+        pnlSidebar.Controls.Add(btnNavSecurityLogs)
         pnlSidebar.Controls.Add(btnNavReports)
         pnlSidebar.Controls.Add(btnNavTitleArchive)
         pnlSidebar.Controls.Add(btnNavManageProposals)
@@ -136,6 +140,7 @@ Public Class frmAdminShell
             btnNavManageAccounts,
             btnNavActivityLogs,
             btnNavLoginActivity,
+            btnNavSecurityLogs,
             btnNavProfile
         }
 
@@ -214,6 +219,10 @@ Public Class frmAdminShell
         LoadContent(New ucMyLoginActivity(), btnNavLoginActivity)
     End Sub
 
+    Private Sub btnNavSecurityLogs_Click(sender As Object, e As EventArgs)
+        LoadContent(New ucSecurityLogs(), btnNavSecurityLogs)
+    End Sub
+
     Private Sub btnNavProfile_Click(sender As Object, e As EventArgs)
         LoadContent(New ucProfile(), btnNavProfile)
     End Sub
@@ -221,6 +230,10 @@ Public Class frmAdminShell
     Private Sub btnNavLogout_Click(sender As Object, e As EventArgs)
         Try
             LoginActivityService.RecordLogout(Session.CurrentUser)
+            If Session.CurrentUser IsNot Nothing Then
+                SecurityLogService.Record(Session.CurrentUser.UserId, Session.CurrentUser.Username,
+                                          "Logout", "The account signed out normally.")
+            End If
         Catch ex As Exception
             MessageBox.Show("Your logout could not be recorded, but the session will still be closed." &
                             Environment.NewLine & ex.Message,
@@ -239,6 +252,10 @@ Public Class frmAdminShell
                 sessionTimer.Stop()
                 MessageBox.Show("This session was signed out from another device.", "Session ended",
                                 MessageBoxButtons.OK, MessageBoxIcon.Information)
+                If Session.CurrentUser IsNot Nothing Then
+                    SecurityLogService.Record(Session.CurrentUser.UserId, Session.CurrentUser.Username,
+                                              "Session Expired", "The session was revoked from another device.")
+                End If
                 Session.CurrentUser = Nothing
                 Session.SessionId = Nothing
                 Dim loginForm As New frmLogin()
