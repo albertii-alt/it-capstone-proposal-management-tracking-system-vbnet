@@ -10,7 +10,8 @@ Public Class frmAdminShell
 
     Private ReadOnly pnlSidebar As New Panel()
     Private ReadOnly pnlContent As New Panel()
-    Private ReadOnly lblLogo As New Label()
+    Private ReadOnly pnlLogoTopSpacer As New Panel()
+    Private ReadOnly picLogo As New PictureBox()
     Private ReadOnly lblAppName As New Label()
     Private ReadOnly btnNavDashboard As New Button()
     Private ReadOnly btnNavManageProposals As New Button()
@@ -55,80 +56,137 @@ Public Class frmAdminShell
     Private Sub ConfigureLayout()
         pnlSidebar.Name = "pnlSidebar"
         pnlSidebar.Dock = DockStyle.Left
-        pnlSidebar.Width = 180
+        pnlSidebar.Width = 250
         pnlSidebar.BackColor = _sidebarColor
 
         pnlContent.Name = "pnlContent"
         pnlContent.Dock = DockStyle.Fill
         pnlContent.BackColor = SystemColors.Control
 
-        lblLogo.Name = "lblLogo"
-        lblLogo.Text = "CCS"
-        lblLogo.Dock = DockStyle.Top
-        lblLogo.Height = 52
-        lblLogo.TextAlign = ContentAlignment.MiddleCenter
-        lblLogo.Font = New Font("Segoe UI", 20.0F, FontStyle.Bold)
-        lblLogo.ForeColor = _activeColor
-        lblLogo.BackColor = _sidebarColor
+        pnlLogoTopSpacer.Name = "pnlLogoTopSpacer"
+        pnlLogoTopSpacer.Dock = DockStyle.Top
+        pnlLogoTopSpacer.Height = 24
+        pnlLogoTopSpacer.BackColor = _sidebarColor
+
+        picLogo.Name = "picLogo"
+        picLogo.Dock = DockStyle.Top
+        picLogo.Height = 108
+        picLogo.Padding = New Padding(0, 12, 0, 0)
+        picLogo.SizeMode = PictureBoxSizeMode.Zoom
+        picLogo.BackColor = _sidebarColor
+        LoadLogoImage()
 
         lblAppName.Name = "lblAppName"
-        lblAppName.Text = "Capstone System"
+        lblAppName.Text = "IT Capstone Proposal Management and Tracking System"
         lblAppName.Dock = DockStyle.Top
-        lblAppName.Height = 32
+        lblAppName.Height = 64
+        lblAppName.AutoSize = False
         lblAppName.TextAlign = ContentAlignment.MiddleCenter
-        lblAppName.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular)
+        lblAppName.Font = New Font("Segoe UI", 8.5F, FontStyle.Regular)
         lblAppName.ForeColor = _activeColor
         lblAppName.BackColor = _sidebarColor
+        lblAppName.Padding = New Padding(8, 2, 8, 2)
 
-        ConfigureNavButton(btnNavDashboard, "btnNavDashboard", "Dashboard")
-        ConfigureNavButton(btnNavManageProposals, "btnNavManageProposals", "Manage Proposals")
-        ConfigureNavButton(btnNavTitleArchive, "btnNavTitleArchive", "Title Archive")
-        ConfigureNavButton(btnNavReports, "btnNavReports", "Reports")
-        ConfigureNavButton(btnNavManageAccounts, "btnNavManageAccounts", "Manage Accounts")
-        ConfigureNavButton(btnNavActivityLogs, "btnNavActivityLogs", "Activity Logs")
-        ConfigureNavButton(btnNavLoginActivity, "btnNavLoginActivity", "My Login Activity")
-        ConfigureNavButton(btnNavSecurityLogs, "btnNavSecurityLogs", "Security Logs")
-        ConfigureNavButton(btnNavProfile, "btnNavProfile", "Profile")
+        ConfigureNavButton(btnNavDashboard, "btnNavDashboard", "Dashboard", ChrW(&HE80F))
+        ConfigureNavButton(btnNavManageProposals, "btnNavManageProposals", "Manage Proposals", ChrW(&HE8A5))
+        ConfigureNavButton(btnNavTitleArchive, "btnNavTitleArchive", "Title Archive", ChrW(&HE7B8))
+        ConfigureNavButton(btnNavReports, "btnNavReports", "Reports", ChrW(&HE9D2))
+        ConfigureNavButton(btnNavManageAccounts, "btnNavManageAccounts", "Manage Accounts", ChrW(&HE716))
+        ConfigureNavButton(btnNavActivityLogs, "btnNavActivityLogs", "Activity Logs", ChrW(&HE9D9))
+        ConfigureNavButton(btnNavLoginActivity, "btnNavLoginActivity", "My Login Activity", ChrW(&HE81C))
+        ConfigureNavButton(btnNavSecurityLogs, "btnNavSecurityLogs", "Security Logs", ChrW(&HE72E))
+        ConfigureNavButton(btnNavProfile, "btnNavProfile", "Profile", ChrW(&HE77B))
 
         btnNavLogout.Name = "btnNavLogout"
-        btnNavLogout.Text = "Logout"
+        btnNavLogout.Text = "   Logout"
         btnNavLogout.Dock = DockStyle.Bottom
         btnNavLogout.Height = 40
         btnNavLogout.FlatStyle = FlatStyle.Flat
         btnNavLogout.FlatAppearance.BorderSize = 0
         btnNavLogout.TextAlign = ContentAlignment.MiddleLeft
-        btnNavLogout.Padding = New Padding(18, 0, 0, 0)
+        btnNavLogout.Padding = New Padding(12, 0, 0, 0)
+        btnNavLogout.ImageAlign = ContentAlignment.MiddleLeft
+        btnNavLogout.TextImageRelation = TextImageRelation.ImageBeforeText
+        btnNavLogout.Image = CreateNavIcon(ChrW(&HE7E8), Color.FromArgb(242, 166, 166))
         btnNavLogout.BackColor = _sidebarColor
         btnNavLogout.ForeColor = Color.FromArgb(242, 166, 166)
 
         pnlSidebar.Controls.Add(btnNavLogout)
         pnlSidebar.Controls.Add(btnNavProfile)
-        pnlSidebar.Controls.Add(btnNavManageAccounts)
-        pnlSidebar.Controls.Add(btnNavActivityLogs)
-        pnlSidebar.Controls.Add(btnNavLoginActivity)
         pnlSidebar.Controls.Add(btnNavSecurityLogs)
+        pnlSidebar.Controls.Add(btnNavLoginActivity)
+        pnlSidebar.Controls.Add(btnNavActivityLogs)
+        pnlSidebar.Controls.Add(btnNavManageAccounts)
         pnlSidebar.Controls.Add(btnNavReports)
         pnlSidebar.Controls.Add(btnNavTitleArchive)
         pnlSidebar.Controls.Add(btnNavManageProposals)
         pnlSidebar.Controls.Add(btnNavDashboard)
         pnlSidebar.Controls.Add(lblAppName)
-        pnlSidebar.Controls.Add(lblLogo)
+        pnlSidebar.Controls.Add(picLogo)
+        pnlSidebar.Controls.Add(pnlLogoTopSpacer)
 
         Me.Controls.Add(pnlContent)
         Me.Controls.Add(pnlSidebar)
     End Sub
 
-    Private Sub ConfigureNavButton(navButton As Button, controlName As String, buttonText As String)
+    Private Sub LoadLogoImage()
+        Dim asm As System.Reflection.Assembly = System.Reflection.Assembly.GetExecutingAssembly()
+        Using stream As System.IO.Stream = asm.GetManifestResourceStream("CapstoneProposalTrackingSystem.CCS_Logo.png")
+            If stream Is Nothing Then
+                MessageBox.Show("Logo resource not found.", "Unable to load logo", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                Return
+            End If
+
+            Using sourceImage As Image = Image.FromStream(stream)
+                picLogo.Image = New Bitmap(sourceImage)
+            End Using
+        End Using
+    End Sub
+
+    Private Sub ConfigureNavButton(navButton As Button, controlName As String, buttonText As String, iconGlyph As String)
         navButton.Name = controlName
-        navButton.Text = buttonText
+        navButton.Text = "   " & buttonText
         navButton.Dock = DockStyle.Top
         navButton.Height = 40
         navButton.FlatStyle = FlatStyle.Flat
         navButton.FlatAppearance.BorderSize = 0
         navButton.TextAlign = ContentAlignment.MiddleLeft
-        navButton.Padding = New Padding(18, 0, 0, 0)
+        navButton.Padding = New Padding(12, 0, 0, 0)
+        navButton.ImageAlign = ContentAlignment.MiddleLeft
+        navButton.TextImageRelation = TextImageRelation.ImageBeforeText
         navButton.BackColor = _sidebarColor
         navButton.ForeColor = _navTextColor
+        navButton.Tag = iconGlyph
+        navButton.Image = CreateNavIcon(iconGlyph, _navTextColor)
+    End Sub
+
+    Private Function CreateNavIcon(iconGlyph As String, iconColor As Color) As Bitmap
+        Dim icon As New Bitmap(24, 24)
+
+        Using graphics As Graphics = Graphics.FromImage(icon)
+            graphics.Clear(Color.Transparent)
+            Using iconFont As New Font("Segoe MDL2 Assets", 16.0F, FontStyle.Regular, GraphicsUnit.Point)
+                TextRenderer.DrawText(
+                    graphics,
+                    iconGlyph,
+                    iconFont,
+                    New Rectangle(0, 0, icon.Width, icon.Height),
+                    iconColor,
+                    Color.Transparent,
+                    TextFormatFlags.HorizontalCenter Or TextFormatFlags.VerticalCenter Or TextFormatFlags.NoPadding)
+            End Using
+        End Using
+
+        Return icon
+    End Function
+
+    Private Sub SetNavButtonIcon(navButton As Button, iconColor As Color)
+        Dim iconGlyph As String = TryCast(navButton.Tag, String)
+        If String.IsNullOrEmpty(iconGlyph) Then Return
+
+        Dim previousIcon As Image = navButton.Image
+        navButton.Image = CreateNavIcon(iconGlyph, iconColor)
+        If previousIcon IsNot Nothing Then previousIcon.Dispose()
     End Sub
 
     Private Sub SetActiveNavButton(activeButton As Button)
@@ -147,10 +205,12 @@ Public Class frmAdminShell
         For Each navButton As Button In navButtons
             navButton.BackColor = _sidebarColor
             navButton.ForeColor = _navTextColor
+            SetNavButtonIcon(navButton, _navTextColor)
         Next
 
         activeButton.BackColor = _activeColor
         activeButton.ForeColor = _sidebarColor
+        SetNavButtonIcon(activeButton, _sidebarColor)
     End Sub
 
     Private Sub LoadContent(control As UserControl, activeButton As Button)
@@ -228,6 +288,15 @@ Public Class frmAdminShell
     End Sub
 
     Private Sub btnNavLogout_Click(sender As Object, e As EventArgs)
+        Dim confirmation As DialogResult = MessageBox.Show(
+            "Are you sure you want to log out?",
+            "Confirm logout",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question,
+            MessageBoxDefaultButton.Button2)
+
+        If confirmation <> DialogResult.Yes Then Return
+
         Try
             LoginActivityService.RecordLogout(Session.CurrentUser)
             If Session.CurrentUser IsNot Nothing Then
