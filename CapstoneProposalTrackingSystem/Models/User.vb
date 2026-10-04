@@ -6,4 +6,5 @@
     Public Property IsActive As Boolean
     Public Property FullName As String
     Public Property Email As String
+    Public Property ProfilePhoto As Byte()
 End Class

@@ -17,6 +17,7 @@ Public Class frmAdminShell
     Private ReadOnly btnNavTitleArchive As New Button()
     Private ReadOnly btnNavReports As New Button()
     Private ReadOnly btnNavManageAccounts As New Button()
+    Private ReadOnly btnNavProfile As New Button()
     Private ReadOnly btnNavLogout As New Button()
 
     Public Sub New()
@@ -27,6 +28,7 @@ Public Class frmAdminShell
         AddHandler btnNavTitleArchive.Click, AddressOf btnNavTitleArchive_Click
         AddHandler btnNavReports.Click, AddressOf btnNavReports_Click
         AddHandler btnNavManageAccounts.Click, AddressOf btnNavManageAccounts_Click
+        AddHandler btnNavProfile.Click, AddressOf btnNavProfile_Click
         AddHandler btnNavLogout.Click, AddressOf btnNavLogout_Click
         AddHandler MyBase.Load, AddressOf frmAdminShell_Load
     End Sub
@@ -75,6 +77,7 @@ Public Class frmAdminShell
         ConfigureNavButton(btnNavTitleArchive, "btnNavTitleArchive", "Title Archive")
         ConfigureNavButton(btnNavReports, "btnNavReports", "Reports")
         ConfigureNavButton(btnNavManageAccounts, "btnNavManageAccounts", "Manage Accounts")
+        ConfigureNavButton(btnNavProfile, "btnNavProfile", "Profile")
 
         btnNavLogout.Name = "btnNavLogout"
         btnNavLogout.Text = "Logout"
@@ -88,6 +91,7 @@ Public Class frmAdminShell
         btnNavLogout.ForeColor = Color.FromArgb(242, 166, 166)
 
         pnlSidebar.Controls.Add(btnNavLogout)
+        pnlSidebar.Controls.Add(btnNavProfile)
         pnlSidebar.Controls.Add(btnNavManageAccounts)
         pnlSidebar.Controls.Add(btnNavReports)
         pnlSidebar.Controls.Add(btnNavTitleArchive)
@@ -119,7 +123,8 @@ Public Class frmAdminShell
             btnNavManageProposals,
             btnNavTitleArchive,
             btnNavReports,
-            btnNavManageAccounts
+            btnNavManageAccounts,
+            btnNavProfile
         }
 
         For Each navButton As Button In navButtons
@@ -163,7 +168,13 @@ Public Class frmAdminShell
     End Sub
 
     Private Sub btnNavDashboard_Click(sender As Object, e As EventArgs)
-        LoadContent(New ucDashboard(), btnNavDashboard)
+        Dim dashboard As New ucDashboard()
+        AddHandler dashboard.ProfileRequested, AddressOf ucDashboard_ProfileRequested
+        LoadContent(dashboard, btnNavDashboard)
+    End Sub
+
+    Private Sub ucDashboard_ProfileRequested(sender As Object, e As EventArgs)
+        btnNavProfile.PerformClick()
     End Sub
 
     Private Sub btnNavManageProposals_Click(sender As Object, e As EventArgs)
@@ -180,6 +191,10 @@ Public Class frmAdminShell
 
     Private Sub btnNavManageAccounts_Click(sender As Object, e As EventArgs)
         LoadContent(New ucManageAccounts(), btnNavManageAccounts)
+    End Sub
+
+    Private Sub btnNavProfile_Click(sender As Object, e As EventArgs)
+        LoadContent(New ucProfile(), btnNavProfile)
     End Sub
 
     Private Sub btnNavLogout_Click(sender As Object, e As EventArgs)

@@ -9,7 +9,7 @@ Public Class UserDAL
         Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
             conn.Open()
 
-            Dim query As String = "SELECT user_id, username, password_hash, role, is_active, full_name, email " &
+            Dim query As String = "SELECT user_id, username, password_hash, role, is_active, full_name, email, profile_photo " &
                                    "FROM tbl_users WHERE username = @username"
 
             Using cmd As New MySqlCommand(query, conn)
@@ -24,7 +24,8 @@ Public Class UserDAL
                             .Role = CType([Enum].Parse(GetType(UserRole), reader.GetString("role")), UserRole),
                             .IsActive = reader.GetBoolean("is_active"),
                             .FullName = reader.GetString("full_name"),
-                            .Email = reader.GetString("email")
+                            .Email = reader.GetString("email"),
+                            .ProfilePhoto = If(reader.IsDBNull(reader.GetOrdinal("profile_photo")), Nothing, CType(reader("profile_photo"), Byte()))
                         }
                     End If
                 End Using
@@ -40,7 +41,7 @@ Public Class UserDAL
         Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
             conn.Open()
 
-            Dim query As String = "SELECT user_id, username, password_hash, role, is_active, full_name, email " &
+            Dim query As String = "SELECT user_id, username, password_hash, role, is_active, full_name, email, profile_photo " &
                                   "FROM tbl_users WHERE user_id = @user_id"
 
             Using cmd As New MySqlCommand(query, conn)
@@ -55,7 +56,8 @@ Public Class UserDAL
                             .Role = CType([Enum].Parse(GetType(UserRole), reader.GetString("role")), UserRole),
                             .IsActive = reader.GetBoolean("is_active"),
                             .FullName = reader.GetString("full_name"),
-                            .Email = reader.GetString("email")
+                            .Email = reader.GetString("email"),
+                            .ProfilePhoto = If(reader.IsDBNull(reader.GetOrdinal("profile_photo")), Nothing, CType(reader("profile_photo"), Byte()))
                         }
                     End If
                 End Using
@@ -133,6 +135,31 @@ Public Class UserDAL
                     cmd.Parameters.AddWithValue("@role", user.Role.ToString())
                     cmd.Parameters.AddWithValue("@user_id", user.UserId)
                     cmd.ExecuteNonQuery()
+                End Using
+            Catch ex As MySqlException When ex.Number = 1062
+                Throw New ApplicationException("That username or email is already in use.", ex)
+            End Try
+        End Using
+    End Sub
+
+    Public Shared Sub UpdateOwnProfile(user As User)
+        Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
+            conn.Open()
+
+            Dim query As String = "UPDATE tbl_users SET username = @username, full_name = @full_name, email = @email, profile_photo = @profile_photo " &
+                                  "WHERE user_id = @user_id"
+
+            Try
+                Using cmd As New MySqlCommand(query, conn)
+                    cmd.Parameters.AddWithValue("@username", user.Username)
+                    cmd.Parameters.AddWithValue("@full_name", user.FullName)
+                    cmd.Parameters.AddWithValue("@email", user.Email)
+                    Dim photoParameter = cmd.Parameters.Add("@profile_photo", MySqlDbType.MediumBlob)
+                    photoParameter.Value = If(user.ProfilePhoto Is Nothing, CType(DBNull.Value, Object), user.ProfilePhoto)
+                    cmd.Parameters.AddWithValue("@user_id", user.UserId)
+                    If cmd.ExecuteNonQuery() = 0 Then
+                        Throw New ApplicationException("That account no longer exists.")
+                    End If
                 End Using
             Catch ex As MySqlException When ex.Number = 1062
                 Throw New ApplicationException("That username or email is already in use.", ex)

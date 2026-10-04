@@ -20,6 +20,7 @@ erDiagram
     enum role "Student | Admin | SuperAdmin"
     varchar full_name
     varchar email
+    mediumblob profile_photo
   }
   PROPOSALS {
     int proposal_id PK
@@ -73,6 +74,7 @@ CREATE TABLE tbl_users (
   role          ENUM('Student', 'Admin', 'SuperAdmin') NOT NULL,
   full_name     VARCHAR(100) NOT NULL,
   email         VARCHAR(100) NOT NULL UNIQUE,
+  profile_photo MEDIUMBLOB NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -143,6 +145,10 @@ CREATE TABLE tbl_title_archive (
 ```
 
 ## Notes
+
+- Existing databases must run `docs/migrations/002_add_user_profile_photo.sql`
+  before deploying the profile module. New databases include the nullable
+  `profile_photo` column in `tbl_users`.
 
 - Before deploying the Super Admin role to an existing database, run
   `docs/migrations/001_add_super_admin_role.sql`. It promotes the lowest-ID

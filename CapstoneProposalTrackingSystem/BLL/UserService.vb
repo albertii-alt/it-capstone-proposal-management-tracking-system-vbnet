@@ -2,12 +2,115 @@ Option Strict On
 Option Explicit On
 
 Imports System.Collections.Generic
+Imports System.Net.Mail
+Imports MySql.Data.MySqlClient
 
 Public Class UserService
 
     Public Shared Function GetAllUsers() As List(Of User)
         Return UserDAL.GetAllUsers()
     End Function
+
+    Public Shared Function GetOwnProfile(userId As Integer) As User
+        If userId <= 0 Then
+            Throw New ApplicationException("A valid account is required.")
+        End If
+
+        Dim user As User
+        Try
+            user = UserDAL.GetUserById(userId)
+        Catch ex As MySqlException
+            Throw New ApplicationException("Could not load your profile. Please try again.", ex)
+        End Try
+        If user Is Nothing Then
+            Throw New ApplicationException("That account no longer exists.")
+        End If
+
+        Return user
+    End Function
+
+    Public Shared Sub UpdateOwnProfile(userId As Integer, username As String, fullName As String, email As String, profilePhoto As Byte())
+        If userId <= 0 Then
+            Throw New ApplicationException("A valid account is required.")
+        End If
+
+        If String.IsNullOrWhiteSpace(username) OrElse String.IsNullOrWhiteSpace(fullName) OrElse String.IsNullOrWhiteSpace(email) Then
+            Throw New ApplicationException("Username, full name, and email are all required.")
+        End If
+
+        If username.Trim().Length > 50 OrElse fullName.Trim().Length > 100 OrElse email.Trim().Length > 100 Then
+            Throw New ApplicationException("Username, full name, or email exceeds the allowed length.")
+        End If
+
+        Try
+            Dim parsedEmail As New MailAddress(email.Trim())
+            If parsedEmail.Address <> email.Trim() Then
+                Throw New ApplicationException("Enter a valid email address.")
+            End If
+        Catch ex As FormatException
+            Throw New ApplicationException("Enter a valid email address.", ex)
+        End Try
+
+        Dim existingUser As User
+        Try
+            existingUser = UserDAL.GetUserById(userId)
+        Catch ex As MySqlException
+            Throw New ApplicationException("Could not verify your account. Please try again.", ex)
+        End Try
+        If existingUser Is Nothing Then
+            Throw New ApplicationException("That account no longer exists.")
+        End If
+
+        Try
+            UserDAL.UpdateOwnProfile(New User With {
+                .UserId = userId,
+                .Username = username.Trim(),
+                .FullName = fullName.Trim(),
+                .Email = email.Trim(),
+                .ProfilePhoto = profilePhoto
+            })
+        Catch ex As MySqlException
+            Throw New ApplicationException("Could not save your profile. Please try again.", ex)
+        End Try
+    End Sub
+
+    Public Shared Sub ChangeOwnPassword(userId As Integer, currentPassword As String, newPassword As String)
+        If userId <= 0 Then
+            Throw New ApplicationException("A valid account is required.")
+        End If
+
+        If String.IsNullOrWhiteSpace(currentPassword) Then
+            Throw New ApplicationException("Enter your current password.")
+        End If
+
+        If String.IsNullOrWhiteSpace(newPassword) OrElse newPassword.Length < 6 Then
+            Throw New ApplicationException("Password must be at least 6 characters.")
+        End If
+
+        Dim user As User
+        Try
+            user = UserDAL.GetUserById(userId)
+        Catch ex As MySqlException
+            Throw New ApplicationException("Could not verify your current password. Please try again.", ex)
+        End Try
+        If user Is Nothing Then
+            Throw New ApplicationException("That account no longer exists.")
+        End If
+
+        If Not PasswordHasher.VerifyPassword(currentPassword, user.PasswordHash) Then
+            Throw New ApplicationException("Your current password is incorrect.")
+        End If
+
+        If currentPassword = newPassword Then
+            Throw New ApplicationException("Choose a new password different from your current password.")
+        End If
+
+        Try
+            UserDAL.UpdatePassword(userId, PasswordHasher.HashPassword(newPassword))
+        Catch ex As MySqlException
+            Throw New ApplicationException("Could not update your password. Please try again.", ex)
+        End Try
+    End Sub
 
     Public Shared Function CreateUser(username As String, fullName As String, email As String, role As UserRole, plainPassword As String) As Integer
         If String.IsNullOrWhiteSpace(username) OrElse String.IsNullOrWhiteSpace(fullName) OrElse String.IsNullOrWhiteSpace(email) Then
