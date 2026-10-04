@@ -39,14 +39,15 @@ Public Class ucMyLoginActivity
 
     Private Sub InitializeComponent()
         Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .Padding = New Padding(20), .ColumnCount = 1, .RowCount = 4}
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 72.0F))
+        Me.AutoScaleMode = AutoScaleMode.Dpi
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
         Dim headerPanel As New Panel With {.Dock = DockStyle.Fill}
         Dim headerText As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 1, .RowCount = 2}
-        headerText.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        headerText.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
         headerText.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         lblHeader.Text = "My Login Activity"
         lblHeader.Dock = DockStyle.Fill

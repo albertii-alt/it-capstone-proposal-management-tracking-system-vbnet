@@ -24,7 +24,7 @@ Public Class frmAdminActivityLogDetails
         Dim footer As New FlowLayoutPanel()
 
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.ClientSize = New Size(620, 470)
         Me.FormBorderStyle = FormBorderStyle.FixedDialog

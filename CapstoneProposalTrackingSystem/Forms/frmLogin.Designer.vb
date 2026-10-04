@@ -266,8 +266,8 @@ Partial Class frmLogin
         ' 
         ' frmLogin
         ' 
-        AutoScaleDimensions = New SizeF(8.0F, 20.0F)
-        AutoScaleMode = AutoScaleMode.Font
+        AutoScaleDimensions = New SizeF(96.0F, 96.0F)
+        AutoScaleMode = AutoScaleMode.Dpi
         BackColor = Color.FromArgb(CByte(250), CByte(249), CByte(246))
         ClientSize = New Size(700, 380)
         Controls.Add(pnlLoginBox)

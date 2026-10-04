@@ -25,7 +25,7 @@ Public Class frmChangePassword
         Dim btnCancel As New Button()
 
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.ClientSize = New Size(500, 410)
         Me.FormBorderStyle = FormBorderStyle.FixedDialog

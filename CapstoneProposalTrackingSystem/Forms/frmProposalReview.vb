@@ -38,7 +38,7 @@ Public Class frmProposalReview
         Dim groupNameField As Panel
 
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.ClientSize = New Size(620, 780)
         Me.FormBorderStyle = FormBorderStyle.FixedDialog

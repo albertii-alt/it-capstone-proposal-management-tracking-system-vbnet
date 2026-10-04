@@ -48,7 +48,7 @@ Public Class ucSecurityLogs
         Dim filters As New FlowLayoutPanel()
         Dim pagination As New FlowLayoutPanel()
 
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.Name = "ucSecurityLogs"
 
@@ -56,7 +56,7 @@ Public Class ucSecurityLogs
         layout.Padding = New Padding(20)
         layout.ColumnCount = 1
         layout.RowCount = 4
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 72.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
@@ -64,7 +64,7 @@ Public Class ucSecurityLogs
         headerText.Dock = DockStyle.Fill
         headerText.ColumnCount = 1
         headerText.RowCount = 2
-        headerText.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        headerText.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
         headerText.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         lblHeader.Text = "Security Logs"
         lblHeader.Dock = DockStyle.Fill

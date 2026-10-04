@@ -3,6 +3,7 @@ Option Explicit On
 
 Imports System.Collections.Generic
 Imports System.Drawing.Drawing2D
+Imports System.Drawing.Text
 Imports System.Linq
 
 Public Class ucManageAccounts
@@ -46,7 +47,7 @@ Public Class ucManageAccounts
         Dim paginationControls As New FlowLayoutPanel()
 
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.Name = "ucManageAccounts"
 
@@ -56,7 +57,7 @@ Public Class ucManageAccounts
         layout.ColumnCount = 1
         layout.RowCount = 4
         layout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 72.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 56.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
@@ -79,7 +80,7 @@ Public Class ucManageAccounts
         headerTextLayout.ColumnCount = 1
         headerTextLayout.RowCount = 2
         headerTextLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
         headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         headerTextLayout.Controls.Add(lblHeader, 0, 0)
         headerTextLayout.Controls.Add(lblHeaderSubtitle, 0, 1)
@@ -314,6 +315,7 @@ Public Class ucManageAccounts
         Dim cornerDiameter As Integer = Math.Min(20, Math.Min(badgeBounds.Width, badgeBounds.Height))
 
         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias
+        e.Graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit
 
         Using badgePath As New GraphicsPath()
             badgePath.AddArc(badgeBounds.Left, badgeBounds.Top, cornerDiameter, cornerDiameter, 180.0F, 90.0F)

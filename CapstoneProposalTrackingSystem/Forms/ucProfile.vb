@@ -40,7 +40,7 @@ Public Class ucProfile
         Dim lblPasswordHint As New Label()
 
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.Name = "ucProfile"
 
@@ -50,11 +50,11 @@ Public Class ucProfile
         pageLayout.ColumnCount = 1
         pageLayout.RowCount = 2
         pageLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        pageLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 76.0F))
+        pageLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 100.0F))
         pageLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 520.0F))
 
         lblHeader.Dock = DockStyle.Top
-        lblHeader.Height = 40
+        lblHeader.Height = 60
         lblHeader.Text = "Profile"
         lblHeader.Font = New Font("Segoe UI", 23.0F, FontStyle.Bold)
         lblHeader.ForeColor = Color.FromArgb(45, 45, 45)

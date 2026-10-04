@@ -27,7 +27,7 @@ Public Class frmAccountForm
         Dim isCreateMode As Boolean = _existingUser Is Nothing
 
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.ClientSize = If(isCreateMode, New Size(520, 470), New Size(520, 396))
         Me.FormBorderStyle = FormBorderStyle.FixedDialog

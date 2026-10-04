@@ -42,7 +42,7 @@ Public Class ucDashboard
         Dim roleLabel As New Label()
 
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.Name = "ucDashboard"
         Me.Size = New Size(820, 520)
@@ -55,7 +55,7 @@ Public Class ucDashboard
         dashboardLayout.RowCount = 4
         dashboardLayout.GrowStyle = TableLayoutPanelGrowStyle.FixedSize
         dashboardLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        dashboardLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 72.0F))
+        dashboardLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
         dashboardLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 140.0F))
         dashboardLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 16.0F))
         dashboardLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
@@ -73,7 +73,7 @@ Public Class ucDashboard
         headerTextLayout.ColumnCount = 1
         headerTextLayout.RowCount = 2
         headerTextLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
         headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         lblSubheading.Name = "lblSubheading"

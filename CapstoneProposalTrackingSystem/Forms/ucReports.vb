@@ -50,9 +50,10 @@ Public Class ucReports
         Dim filterPanel As New FlowLayoutPanel()
 
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.Name = "ucReports"
+        Me.Padding = New Padding(20)
 
         dgvReportData.Name = "dgvReportData"
         dgvReportData.Dock = DockStyle.Fill
@@ -173,14 +174,14 @@ Public Class ucReports
 
         headerPanel.Name = "pnlReportsHeader"
         headerPanel.Dock = DockStyle.Top
-        headerPanel.Height = 72
+        headerPanel.Height = 96
 
         headerTextLayout.Name = "tlpReportsHeaderText"
         headerTextLayout.Dock = DockStyle.Fill
         headerTextLayout.ColumnCount = 1
         headerTextLayout.RowCount = 2
         headerTextLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
         headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         lblHeader.Name = "lblHeader"

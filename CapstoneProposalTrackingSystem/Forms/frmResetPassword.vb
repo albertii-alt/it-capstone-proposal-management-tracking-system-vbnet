@@ -23,7 +23,7 @@ Public Class frmResetPassword
         Dim footer As New FlowLayoutPanel()
 
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.ClientSize = New Size(500, 280)
         Me.FormBorderStyle = FormBorderStyle.FixedDialog

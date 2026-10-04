@@ -51,7 +51,7 @@ Public Class ucAdminActivityLogs
         Dim paginationControls As New FlowLayoutPanel()
 
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = SystemColors.Control
         Me.Name = "ucAdminActivityLogs"
 
@@ -60,7 +60,7 @@ Public Class ucAdminActivityLogs
         layout.ColumnCount = 1
         layout.RowCount = 4
         layout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 72.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
@@ -79,7 +79,7 @@ Public Class ucAdminActivityLogs
         headerTextLayout.Dock = DockStyle.Fill
         headerTextLayout.ColumnCount = 1
         headerTextLayout.RowCount = 2
-        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
         headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         headerTextLayout.Controls.Add(lblHeader, 0, 0)
         headerTextLayout.Controls.Add(lblHeaderSubtitle, 0, 1)

@@ -11,6 +11,7 @@ Public Class frmActiveSessions
     Public Sub New(userId As Integer, sessionId As String)
         currentUserId = userId
         currentSessionId = sessionId
+        AutoScaleMode = AutoScaleMode.Dpi
         Text = "Active Sessions"
         StartPosition = FormStartPosition.CenterParent
         ClientSize = New Size(760, 360)
@@ -31,6 +32,8 @@ Public Class frmActiveSessions
         grid.AllowUserToAddRows = False
         grid.RowHeadersVisible = False
         grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect
+        grid.ColumnHeadersDefaultCellStyle.Font = New Font("Segoe UI", 9.5F, FontStyle.Bold)
+        grid.DefaultCellStyle.Font = New Font("Segoe UI", 9.5F, FontStyle.Regular)
         grid.AutoGenerateColumns = False
         grid.Columns.Add("device", "Device")
         grid.Columns.Add("ip", "IP address")

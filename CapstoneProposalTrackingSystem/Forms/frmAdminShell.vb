@@ -11,6 +11,7 @@ Public Class frmAdminShell
     Private ReadOnly pnlSidebar As New Panel()
     Private ReadOnly pnlContent As New Panel()
     Private ReadOnly pnlLogoTopSpacer As New Panel()
+    Private ReadOnly pnlNavigationTopSpacer As New Panel()
     Private ReadOnly picLogo As New PictureBox()
     Private ReadOnly lblAppName As New Label()
     Private ReadOnly btnNavDashboard As New Button()
@@ -44,7 +45,7 @@ Public Class frmAdminShell
 
     Private Sub InitializeComponent()
         Me.SuspendLayout()
-        Me.AutoScaleMode = AutoScaleMode.Font
+        Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.ClientSize = New Size(1000, 650)
         Me.MinimumSize = New Size(800, 500)
         Me.Name = "frmAdminShell"
@@ -87,6 +88,11 @@ Public Class frmAdminShell
         lblAppName.BackColor = _sidebarColor
         lblAppName.Padding = New Padding(8, 2, 8, 2)
 
+        pnlNavigationTopSpacer.Name = "pnlNavigationTopSpacer"
+        pnlNavigationTopSpacer.Dock = DockStyle.Top
+        pnlNavigationTopSpacer.Height = 18
+        pnlNavigationTopSpacer.BackColor = _sidebarColor
+
         ConfigureNavButton(btnNavDashboard, "btnNavDashboard", "Dashboard", ChrW(&HE80F))
         ConfigureNavButton(btnNavManageProposals, "btnNavManageProposals", "Manage Proposals", ChrW(&HE8A5))
         ConfigureNavButton(btnNavTitleArchive, "btnNavTitleArchive", "Title Archive", ChrW(&HE7B8))
@@ -121,6 +127,7 @@ Public Class frmAdminShell
         pnlSidebar.Controls.Add(btnNavTitleArchive)
         pnlSidebar.Controls.Add(btnNavManageProposals)
         pnlSidebar.Controls.Add(btnNavDashboard)
+        pnlSidebar.Controls.Add(pnlNavigationTopSpacer)
         pnlSidebar.Controls.Add(lblAppName)
         pnlSidebar.Controls.Add(picLogo)
         pnlSidebar.Controls.Add(pnlLogoTopSpacer)
