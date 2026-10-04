@@ -37,12 +37,48 @@ Public Class ProposalService
     End Function
 
     Public Shared Sub UpdateProposal(proposal As Proposal)
+        UpdateProposal(proposal, Nothing)
+    End Sub
+
+    Public Shared Sub UpdateProposal(proposal As Proposal, actor As User)
         If proposal Is Nothing OrElse proposal.ProposalId <= 0 Then
             Throw New ArgumentException("A valid proposal is required.", NameOf(proposal))
         End If
 
+        Dim previousProposal As Proposal = ProposalDAL.GetProposalById(proposal.ProposalId)
         ProposalDAL.UpdateProposal(proposal)
+
+        If actor IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(actor.Role) AndAlso previousProposal IsNot Nothing Then
+            Dim changedFields As New List(Of String)
+            If Not String.Equals(previousProposal.Title, proposal.Title, StringComparison.Ordinal) Then changedFields.Add("title")
+            If Not String.Equals(previousProposal.GroupName, proposal.GroupName, StringComparison.Ordinal) Then changedFields.Add("group")
+            If Not String.Equals(previousProposal.Description, proposal.Description, StringComparison.Ordinal) Then changedFields.Add("description")
+            If Not String.Equals(previousProposal.YearLevel, proposal.YearLevel, StringComparison.Ordinal) Then changedFields.Add("year level")
+            If Not String.Equals(previousProposal.Semester, proposal.Semester, StringComparison.Ordinal) Then changedFields.Add("semester")
+            If Not ProposalMembersMatch(previousProposal.Members, proposal.Members) Then changedFields.Add("members")
+
+            Dim description As String = "Updated the proposal """ & proposal.Title & """."
+            If changedFields.Count > 0 Then
+                description &= " Changed: " & String.Join(", ", changedFields) & "."
+            End If
+            AdminActivityLogService.Record(actor, "Updated", "Proposal", proposal.ProposalId, proposal.Title,
+                                           description,
+                                           If(changedFields.Count = 0, Nothing, "Changed fields: " & String.Join(", ", changedFields)))
+        End If
     End Sub
+
+    Private Shared Function ProposalMembersMatch(leftMembers As List(Of ProposalMember), rightMembers As List(Of ProposalMember)) As Boolean
+        If leftMembers Is Nothing OrElse rightMembers Is Nothing Then
+            Return leftMembers Is rightMembers
+        End If
+        If leftMembers.Count <> rightMembers.Count Then Return False
+        For index As Integer = 0 To leftMembers.Count - 1
+            If Not String.Equals(leftMembers(index).MemberName, rightMembers(index).MemberName, StringComparison.Ordinal) Then
+                Return False
+            End If
+        Next
+        Return True
+    End Function
 
     Public Shared Function GetMyProposals(userId As Integer) As List(Of Proposal)
         Return ProposalDAL.GetProposalsBySubmitter(userId)
@@ -56,7 +92,7 @@ Public Class ProposalService
         Return ProposalDAL.GetAllArchivedTitles()
     End Function
 
-    Public Shared Function DeleteArchivedTitles(archiveIds As List(Of Integer)) As Integer
+    Public Shared Function DeleteArchivedTitles(archiveIds As List(Of Integer), Optional actor As User = Nothing) As Integer
         If archiveIds Is Nothing Then
             Throw New ArgumentNullException(NameOf(archiveIds))
         End If
@@ -65,7 +101,14 @@ Public Class ProposalService
             Throw New ArgumentOutOfRangeException(NameOf(archiveIds), "Archive IDs must be positive.")
         End If
 
-        Return ProposalDAL.DeleteArchivedTitles(archiveIds)
+        Dim deletedCount As Integer = ProposalDAL.DeleteArchivedTitles(archiveIds)
+        If deletedCount > 0 AndAlso actor IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(actor.Role) Then
+            AdminActivityLogService.Record(actor, "Deleted", "Title Archive", Nothing,
+                                           deletedCount.ToString() & " archived title(s)",
+                                           "Deleted " & deletedCount.ToString() & " archived title(s).",
+                                           "Archive IDs: " & String.Join(", ", archiveIds))
+        End If
+        Return deletedCount
     End Function
 
     Public Shared Function DeleteProposal(proposalId As Integer) As Boolean
@@ -188,7 +231,7 @@ Public Class ProposalService
         Return StatusLogDAL.GetRecentActivity(maxRows)
     End Function
 
-    Public Shared Function ResyncArchive() As Integer
+    Public Shared Function ResyncArchive(Optional actor As User = Nothing) As Integer
         Dim allProposals As List(Of Proposal) = ProposalDAL.GetAllProposals()
         Dim resyncedCount As Integer = 0
 
@@ -200,6 +243,11 @@ Public Class ProposalService
             End If
         Next
 
+        If resyncedCount > 0 AndAlso actor IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(actor.Role) Then
+            AdminActivityLogService.Record(actor, "Updated", "Title Archive", Nothing,
+                                           "Title archive",
+                                           "Resynchronized " & resyncedCount.ToString() & " approved title(s) in the title archive.")
+        End If
         Return resyncedCount
     End Function
 

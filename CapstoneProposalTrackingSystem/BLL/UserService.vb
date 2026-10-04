@@ -61,6 +61,20 @@ Public Class UserService
             Throw New ApplicationException("That account no longer exists.")
         End If
 
+        Dim changedFields As New List(Of String)
+        If Not String.Equals(existingUser.Username, username.Trim(), StringComparison.Ordinal) Then
+            changedFields.Add("username")
+        End If
+        If Not String.Equals(existingUser.FullName, fullName.Trim(), StringComparison.Ordinal) Then
+            changedFields.Add("full name")
+        End If
+        If Not String.Equals(existingUser.Email, email.Trim(), StringComparison.OrdinalIgnoreCase) Then
+            changedFields.Add("email")
+        End If
+        If Not ProfilePhotosMatch(existingUser.ProfilePhoto, profilePhoto) Then
+            changedFields.Add("profile photo")
+        End If
+
         Try
             UserDAL.UpdateOwnProfile(New User With {
                 .UserId = userId,
@@ -72,7 +86,29 @@ Public Class UserService
         Catch ex As MySqlException
             Throw New ApplicationException("Could not save your profile. Please try again.", ex)
         End Try
+
+        Dim actor As User = UserDAL.GetUserById(userId)
+        If actor IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(actor.Role) Then
+            Dim changedDescription As String = "Updated the administrator profile."
+            If changedFields.Count > 0 Then
+                changedDescription &= " Changed: " & String.Join(", ", changedFields) & "."
+            End If
+            AdminActivityLogService.Record(actor, "Updated", "Profile", actor.UserId, actor.FullName,
+                                           changedDescription,
+                                           "Changed fields: " & String.Join(", ", changedFields))
+        End If
     End Sub
+
+    Private Shared Function ProfilePhotosMatch(leftPhoto As Byte(), rightPhoto As Byte()) As Boolean
+        If leftPhoto Is Nothing OrElse leftPhoto.Length = 0 Then
+            Return rightPhoto Is Nothing OrElse rightPhoto.Length = 0
+        End If
+        If rightPhoto Is Nothing OrElse leftPhoto.Length <> rightPhoto.Length Then Return False
+        For index As Integer = 0 To leftPhoto.Length - 1
+            If leftPhoto(index) <> rightPhoto(index) Then Return False
+        Next
+        Return True
+    End Function
 
     Public Shared Sub ChangeOwnPassword(userId As Integer, currentPassword As String, newPassword As String)
         If userId <= 0 Then
@@ -110,6 +146,12 @@ Public Class UserService
         Catch ex As MySqlException
             Throw New ApplicationException("Could not update your password. Please try again.", ex)
         End Try
+
+        Dim actor As User = UserDAL.GetUserById(userId)
+        If actor IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(actor.Role) Then
+            AdminActivityLogService.Record(actor, "Changed Password", "Profile", actor.UserId, actor.FullName,
+                                           "Changed the administrator account password.")
+        End If
     End Sub
 
     Public Shared Function CreateUser(username As String, fullName As String, email As String, role As UserRole, plainPassword As String, Optional currentAdminUserId As Integer = 0) As Integer

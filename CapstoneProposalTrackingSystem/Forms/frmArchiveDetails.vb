@@ -243,7 +243,8 @@ Public Class frmArchiveDetails
         End Using
 
         Try
-            Dim deletedCount As Integer = ProposalService.DeleteArchivedTitles(New List(Of Integer) From {_archivedTitle.ArchiveId})
+            Dim deletedCount As Integer = ProposalService.DeleteArchivedTitles(
+                New List(Of Integer) From {_archivedTitle.ArchiveId}, Session.CurrentUser)
             If deletedCount = 0 Then
                 MessageBox.Show("That archived title could not be found. It may have already been deleted.")
                 Return

@@ -130,7 +130,7 @@
                 ProposalService.SubmitProposal(proposal, Session.CurrentUser)
                 MessageBox.Show("Proposal submitted successfully! Status: Pending.")
             Else
-                ProposalService.UpdateProposal(proposal)
+                ProposalService.UpdateProposal(proposal, Session.CurrentUser)
                 MessageBox.Show("Proposal updated successfully.")
                 Me.DialogResult = DialogResult.OK
             End If

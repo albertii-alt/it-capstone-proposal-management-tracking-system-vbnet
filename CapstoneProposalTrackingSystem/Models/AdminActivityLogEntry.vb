@@ -9,4 +9,6 @@ Public Class AdminActivityLogEntry
     Public Property Description As String
     Public Property Metadata As String
     Public Property CreatedAt As DateTime
+    Public Property IsStoredAuditEntry As Boolean
+    Public Property ActivitySource As String
 End Class

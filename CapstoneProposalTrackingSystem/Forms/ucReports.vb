@@ -593,6 +593,12 @@ Public Class ucReports
                     Next
                 End Using
 
+                If Session.CurrentUser IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(Session.CurrentUser.Role) Then
+                    AdminActivityLogService.Record(Session.CurrentUser, "Exported", "Report", Nothing,
+                                                   "Proposal report",
+                                                   "Exported the proposal report to CSV.",
+                                                   "File: " & saveDialog.FileName)
+                End If
                 MessageBox.Show("Report exported successfully to:" & Environment.NewLine & saveDialog.FileName)
             Catch ex As Exception
                 MessageBox.Show("Could not export the report: " & ex.Message)

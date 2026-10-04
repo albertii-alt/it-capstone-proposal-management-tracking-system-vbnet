@@ -540,7 +540,7 @@ Public Class ucTitleArchive
 
         Try
             Dim archiveIds As List(Of Integer) = archivedTitles.Select(Function(title) title.ArchiveId).ToList()
-            Dim deletedCount As Integer = ProposalService.DeleteArchivedTitles(archiveIds)
+            Dim deletedCount As Integer = ProposalService.DeleteArchivedTitles(archiveIds, Session.CurrentUser)
             _selectedArchiveIds.ExceptWith(archiveIds)
             MessageBox.Show(deletedCount.ToString() & " archived title(s) deleted successfully.")
 
