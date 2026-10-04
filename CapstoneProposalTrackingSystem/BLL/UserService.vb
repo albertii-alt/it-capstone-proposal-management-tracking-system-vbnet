@@ -112,7 +112,7 @@ Public Class UserService
         End Try
     End Sub
 
-    Public Shared Function CreateUser(username As String, fullName As String, email As String, role As UserRole, plainPassword As String) As Integer
+    Public Shared Function CreateUser(username As String, fullName As String, email As String, role As UserRole, plainPassword As String, Optional currentAdminUserId As Integer = 0) As Integer
         If String.IsNullOrWhiteSpace(username) OrElse String.IsNullOrWhiteSpace(fullName) OrElse String.IsNullOrWhiteSpace(email) Then
             Throw New ApplicationException("Username, full name, and email are all required.")
         End If
@@ -134,7 +134,13 @@ Public Class UserService
             .PasswordHash = PasswordHasher.HashPassword(plainPassword)
         }
 
-        Return UserDAL.CreateUser(newUser)
+        Dim newUserId As Integer = UserDAL.CreateUser(newUser)
+        If currentAdminUserId > 0 Then
+            Dim actor As User = UserDAL.GetUserById(currentAdminUserId)
+            AdminActivityLogService.Record(actor, "Created", "Account", newUserId, newUser.FullName,
+                                           "Created the " & newUser.Role.ToString() & " account for " & newUser.FullName & ".")
+        End If
+        Return newUserId
     End Function
 
     Public Shared Sub UpdateUser(userId As Integer, username As String, fullName As String, email As String, role As UserRole, currentAdminUserId As Integer)
@@ -167,6 +173,11 @@ Public Class UserService
             .Email = email.Trim(),
             .Role = role
         })
+
+        Dim actorForLog As User = UserDAL.GetUserById(currentAdminUserId)
+        AdminActivityLogService.Record(actorForLog, "Updated", "Account", targetUser.UserId, targetUser.FullName,
+                                       "Updated the account details for " & targetUser.FullName & ".",
+                                       "Role: " & targetUser.Role.ToString() & " -> " & role.ToString())
     End Sub
 
     Public Shared Sub ResetPassword(userId As Integer, newPlainPassword As String, currentAdminUserId As Integer)
@@ -187,6 +198,9 @@ Public Class UserService
         End If
 
         UserDAL.UpdatePassword(userId, PasswordHasher.HashPassword(newPlainPassword))
+        Dim actorForLog As User = UserDAL.GetUserById(currentAdminUserId)
+        AdminActivityLogService.Record(actorForLog, "Reset Password", "Account", targetUser.UserId, targetUser.FullName,
+                                       "Reset the password for " & targetUser.FullName & ".")
     End Sub
 
     Public Shared Sub SetUserActive(userId As Integer, isActive As Boolean, currentAdminUserId As Integer)
@@ -204,6 +218,10 @@ Public Class UserService
         End If
 
         UserDAL.SetUserActive(userId, isActive)
+        Dim actorForLog As User = UserDAL.GetUserById(currentAdminUserId)
+        AdminActivityLogService.Record(actorForLog, If(isActive, "Activated", "Deactivated"), "Account",
+                                       targetUser.UserId, targetUser.FullName,
+                                       If(isActive, "Activated ", "Deactivated ") & targetUser.FullName & "'s account.")
     End Sub
 
     Public Shared Sub DeleteUser(userId As Integer, currentAdminUserId As Integer)
@@ -225,6 +243,9 @@ Public Class UserService
         End If
 
         UserDAL.DeleteUser(userId)
+        Dim actorForLog As User = UserDAL.GetUserById(currentAdminUserId)
+        AdminActivityLogService.Record(actorForLog, "Deleted", "Account", targetUser.UserId, targetUser.FullName,
+                                       "Deleted the account for " & targetUser.FullName & ".")
     End Sub
 
 End Class

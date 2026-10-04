@@ -17,6 +17,7 @@ Public Class frmAdminShell
     Private ReadOnly btnNavTitleArchive As New Button()
     Private ReadOnly btnNavReports As New Button()
     Private ReadOnly btnNavManageAccounts As New Button()
+    Private ReadOnly btnNavActivityLogs As New Button()
     Private ReadOnly btnNavProfile As New Button()
     Private ReadOnly btnNavLogout As New Button()
 
@@ -28,6 +29,7 @@ Public Class frmAdminShell
         AddHandler btnNavTitleArchive.Click, AddressOf btnNavTitleArchive_Click
         AddHandler btnNavReports.Click, AddressOf btnNavReports_Click
         AddHandler btnNavManageAccounts.Click, AddressOf btnNavManageAccounts_Click
+        AddHandler btnNavActivityLogs.Click, AddressOf btnNavActivityLogs_Click
         AddHandler btnNavProfile.Click, AddressOf btnNavProfile_Click
         AddHandler btnNavLogout.Click, AddressOf btnNavLogout_Click
         AddHandler MyBase.Load, AddressOf frmAdminShell_Load
@@ -77,6 +79,7 @@ Public Class frmAdminShell
         ConfigureNavButton(btnNavTitleArchive, "btnNavTitleArchive", "Title Archive")
         ConfigureNavButton(btnNavReports, "btnNavReports", "Reports")
         ConfigureNavButton(btnNavManageAccounts, "btnNavManageAccounts", "Manage Accounts")
+        ConfigureNavButton(btnNavActivityLogs, "btnNavActivityLogs", "Activity Logs")
         ConfigureNavButton(btnNavProfile, "btnNavProfile", "Profile")
 
         btnNavLogout.Name = "btnNavLogout"
@@ -93,6 +96,7 @@ Public Class frmAdminShell
         pnlSidebar.Controls.Add(btnNavLogout)
         pnlSidebar.Controls.Add(btnNavProfile)
         pnlSidebar.Controls.Add(btnNavManageAccounts)
+        pnlSidebar.Controls.Add(btnNavActivityLogs)
         pnlSidebar.Controls.Add(btnNavReports)
         pnlSidebar.Controls.Add(btnNavTitleArchive)
         pnlSidebar.Controls.Add(btnNavManageProposals)
@@ -124,6 +128,7 @@ Public Class frmAdminShell
             btnNavTitleArchive,
             btnNavReports,
             btnNavManageAccounts,
+            btnNavActivityLogs,
             btnNavProfile
         }
 
@@ -191,6 +196,10 @@ Public Class frmAdminShell
 
     Private Sub btnNavManageAccounts_Click(sender As Object, e As EventArgs)
         LoadContent(New ucManageAccounts(), btnNavManageAccounts)
+    End Sub
+
+    Private Sub btnNavActivityLogs_Click(sender As Object, e As EventArgs)
+        LoadContent(New ucAdminActivityLogs(), btnNavActivityLogs)
     End Sub
 
     Private Sub btnNavProfile_Click(sender As Object, e As EventArgs)

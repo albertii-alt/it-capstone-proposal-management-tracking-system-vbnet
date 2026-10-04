@@ -28,7 +28,12 @@ Public Class ProposalService
             adminActorName = submittingUser.FullName
         End If
 
-        Return ProposalDAL.InsertProposal(proposal, adminActorName)
+        Dim proposalId As Integer = ProposalDAL.InsertProposal(proposal, adminActorName)
+        If submittingUser IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(submittingUser.Role) Then
+            AdminActivityLogService.Record(submittingUser, "Created", "Proposal", proposalId, proposal.Title,
+                                           "Created the proposal """ & proposal.Title & """.")
+        End If
+        Return proposalId
     End Function
 
     Public Shared Sub UpdateProposal(proposal As Proposal)
@@ -75,6 +80,24 @@ Public Class ProposalService
         Return ProposalDAL.DeleteProposal(proposalId, actorName)
     End Function
 
+    Public Shared Function DeleteProposal(proposalId As Integer, actor As User) As Boolean
+        If actor Is Nothing Then
+            Throw New ArgumentNullException(NameOf(actor))
+        End If
+
+        Dim proposal As Proposal = ProposalDAL.GetProposalById(proposalId)
+        If proposal Is Nothing Then
+            Return False
+        End If
+
+        Dim deleted As Boolean = ProposalDAL.DeleteProposal(proposalId, actor.FullName)
+        If deleted Then
+            AdminActivityLogService.Record(actor, "Deleted", "Proposal", proposalId, proposal.Title,
+                                           "Deleted the proposal """ & proposal.Title & """.")
+        End If
+        Return deleted
+    End Function
+
     Public Shared Function GetLatestLog(proposalId As Integer) As StatusLogEntry
         Return StatusLogDAL.GetLatestLogForProposal(proposalId)
     End Function
@@ -116,6 +139,12 @@ Public Class ProposalService
         Dim keywords As String = DuplicateChecker.GetKeywordString(targetProposal.Title)
 
         ProposalDAL.UpdateStatusWithLog(proposalId, newStatus, adminId, cleanRemarks, targetProposal.Title, keywords, targetProposal.Semester, targetProposal.GroupName, targetProposal.YearLevel, targetProposal.SubmittedAt)
+        Dim actor As User = UserDAL.GetUserById(adminId)
+        Dim actionType As String = If(newStatus = ProposalStatus.Approved, "Approved",
+                                      If(newStatus = ProposalStatus.Rejected, "Rejected", "Requested Revision"))
+        AdminActivityLogService.Record(actor, actionType, "Proposal", proposalId, targetProposal.Title,
+                                       "Changed the proposal """ & targetProposal.Title & """ to " & newStatus.ToString() & ".",
+                                       If(String.IsNullOrWhiteSpace(cleanRemarks), Nothing, "Remarks: " & cleanRemarks))
     End Sub
 
     Public Shared Function CheckDuplicateForExistingProposal(proposalId As Integer, title As String) As DuplicateCheckResult

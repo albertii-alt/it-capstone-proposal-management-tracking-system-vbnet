@@ -511,7 +511,7 @@ Public Class ucManageProposals
             End Using
 
             Try
-                If Not ProposalService.DeleteProposal(proposal.ProposalId, Session.CurrentUser.FullName) Then
+                If Not ProposalService.DeleteProposal(proposal.ProposalId, Session.CurrentUser) Then
                     MessageBox.Show("The proposal could not be found. It may have already been deleted.")
                     Return
                 End If
