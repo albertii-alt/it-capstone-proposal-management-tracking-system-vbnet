@@ -19,6 +19,8 @@ Public Class ucManageAccounts
     Private WithEvents lblHeaderSubtitle As New Label()
     Private WithEvents cboRoleFilter As New ComboBox()
     Private WithEvents cboStatusFilter As New ComboBox()
+    Private WithEvents lblSearch As New Label()
+    Private WithEvents txtSearch As New TextBox()
     Private WithEvents dgvUsers As New DataGridView()
     Private ReadOnly pnlPagination As New Panel()
     Private ReadOnly flpPaginationControls As New FlowLayoutPanel()
@@ -115,7 +117,7 @@ Public Class ucManageAccounts
         filterPanel.Name = "flpAccountFilters"
         filterPanel.Dock = DockStyle.Fill
         filterPanel.FlowDirection = FlowDirection.LeftToRight
-        filterPanel.WrapContents = False
+        filterPanel.WrapContents = True
         filterPanel.Padding = New Padding(0, 8, 0, 0)
 
         cboRoleFilter.Name = "cboRoleFilter"
@@ -128,8 +130,23 @@ Public Class ucManageAccounts
         cboStatusFilter.Width = 150
         cboStatusFilter.Margin = New Padding(0, 0, 12, 0)
 
+        lblSearch.Name = "lblSearch"
+        lblSearch.AutoSize = False
+        lblSearch.Size = New Size(50, 24)
+        lblSearch.Text = "Search"
+        lblSearch.TextAlign = ContentAlignment.MiddleLeft
+        lblSearch.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular)
+        lblSearch.ForeColor = Color.DimGray
+        lblSearch.Margin = New Padding(0, 0, 6, 0)
+
+        txtSearch.Name = "txtSearch"
+        txtSearch.Width = 250
+        txtSearch.Margin = New Padding(0, 0, 12, 0)
+
         filterPanel.Controls.Add(cboRoleFilter)
         filterPanel.Controls.Add(cboStatusFilter)
+        filterPanel.Controls.Add(lblSearch)
+        filterPanel.Controls.Add(txtSearch)
 
         dgvUsers.Name = "dgvUsers"
         dgvUsers.Dock = DockStyle.Fill
@@ -346,6 +363,14 @@ Public Class ucManageAccounts
             usersToShow = usersToShow.Where(Function(user) user.Role = UserRole.SuperAdmin)
         End If
 
+        Dim searchText As String = txtSearch.Text.Trim()
+        If searchText.Length > 0 Then
+            usersToShow = usersToShow.Where(
+                Function(user) If(user.FullName, String.Empty).IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                                If(user.Username, String.Empty).IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                                If(user.Email, String.Empty).IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0)
+        End If
+
         If cboStatusFilter.SelectedIndex = 1 Then
             usersToShow = usersToShow.Where(Function(user) user.IsActive)
         ElseIf cboStatusFilter.SelectedIndex = 2 Then
@@ -513,6 +538,10 @@ Public Class ucManageAccounts
     End Sub
 
     Private Sub cboStatusFilter_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboStatusFilter.SelectedIndexChanged
+        ApplyFilters()
+    End Sub
+
+    Private Sub txtSearch_TextChanged(sender As Object, e As EventArgs) Handles txtSearch.TextChanged
         ApplyFilters()
     End Sub
 
