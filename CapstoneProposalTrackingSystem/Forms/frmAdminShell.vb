@@ -18,8 +18,10 @@ Public Class frmAdminShell
     Private ReadOnly btnNavReports As New Button()
     Private ReadOnly btnNavManageAccounts As New Button()
     Private ReadOnly btnNavActivityLogs As New Button()
+    Private ReadOnly btnNavLoginActivity As New Button()
     Private ReadOnly btnNavProfile As New Button()
     Private ReadOnly btnNavLogout As New Button()
+    Private ReadOnly sessionTimer As New Timer With {.Interval = 30000}
 
     Public Sub New()
         InitializeComponent()
@@ -30,9 +32,11 @@ Public Class frmAdminShell
         AddHandler btnNavReports.Click, AddressOf btnNavReports_Click
         AddHandler btnNavManageAccounts.Click, AddressOf btnNavManageAccounts_Click
         AddHandler btnNavActivityLogs.Click, AddressOf btnNavActivityLogs_Click
+        AddHandler btnNavLoginActivity.Click, AddressOf btnNavLoginActivity_Click
         AddHandler btnNavProfile.Click, AddressOf btnNavProfile_Click
         AddHandler btnNavLogout.Click, AddressOf btnNavLogout_Click
         AddHandler MyBase.Load, AddressOf frmAdminShell_Load
+        AddHandler sessionTimer.Tick, AddressOf sessionTimer_Tick
     End Sub
 
     Private Sub InitializeComponent()
@@ -80,6 +84,7 @@ Public Class frmAdminShell
         ConfigureNavButton(btnNavReports, "btnNavReports", "Reports")
         ConfigureNavButton(btnNavManageAccounts, "btnNavManageAccounts", "Manage Accounts")
         ConfigureNavButton(btnNavActivityLogs, "btnNavActivityLogs", "Activity Logs")
+        ConfigureNavButton(btnNavLoginActivity, "btnNavLoginActivity", "My Login Activity")
         ConfigureNavButton(btnNavProfile, "btnNavProfile", "Profile")
 
         btnNavLogout.Name = "btnNavLogout"
@@ -97,6 +102,7 @@ Public Class frmAdminShell
         pnlSidebar.Controls.Add(btnNavProfile)
         pnlSidebar.Controls.Add(btnNavManageAccounts)
         pnlSidebar.Controls.Add(btnNavActivityLogs)
+        pnlSidebar.Controls.Add(btnNavLoginActivity)
         pnlSidebar.Controls.Add(btnNavReports)
         pnlSidebar.Controls.Add(btnNavTitleArchive)
         pnlSidebar.Controls.Add(btnNavManageProposals)
@@ -129,6 +135,7 @@ Public Class frmAdminShell
             btnNavReports,
             btnNavManageAccounts,
             btnNavActivityLogs,
+            btnNavLoginActivity,
             btnNavProfile
         }
 
@@ -170,6 +177,7 @@ Public Class frmAdminShell
         End If
 
         btnNavDashboard.PerformClick()
+        sessionTimer.Start()
     End Sub
 
     Private Sub btnNavDashboard_Click(sender As Object, e As EventArgs)
@@ -202,15 +210,45 @@ Public Class frmAdminShell
         LoadContent(New ucAdminActivityLogs(), btnNavActivityLogs)
     End Sub
 
+    Private Sub btnNavLoginActivity_Click(sender As Object, e As EventArgs)
+        LoadContent(New ucMyLoginActivity(), btnNavLoginActivity)
+    End Sub
+
     Private Sub btnNavProfile_Click(sender As Object, e As EventArgs)
         LoadContent(New ucProfile(), btnNavProfile)
     End Sub
 
     Private Sub btnNavLogout_Click(sender As Object, e As EventArgs)
+        Try
+            LoginActivityService.RecordLogout(Session.CurrentUser)
+        Catch ex As Exception
+            MessageBox.Show("Your logout could not be recorded, but the session will still be closed." &
+                            Environment.NewLine & ex.Message,
+                            "Logout Activity", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
         Session.CurrentUser = Nothing
+        Session.SessionId = Nothing
         Dim loginForm As New frmLogin()
         loginForm.Show()
         Me.Close()
+    End Sub
+
+    Private Sub sessionTimer_Tick(sender As Object, e As EventArgs)
+        Try
+            If Not ActiveSessionService.IsActive(Session.SessionId) Then
+                sessionTimer.Stop()
+                MessageBox.Show("This session was signed out from another device.", "Session ended",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Session.CurrentUser = Nothing
+                Session.SessionId = Nothing
+                Dim loginForm As New frmLogin()
+                loginForm.Show()
+                Me.Close()
+                Return
+            End If
+            ActiveSessionService.Touch(Session.SessionId)
+        Catch ex As Exception
+        End Try
     End Sub
 
 End Class
