@@ -10,6 +10,7 @@ erDiagram
   USERS ||--o{ PROPOSALS : submits
   PROPOSALS ||--o{ PROPOSAL_MEMBERS : has
   PROPOSALS ||--o{ STATUS_LOG : has
+  PROPOSALS o|--o| TITLE_ARCHIVE : archived_as
   USERS ||--o{ STATUS_LOG : records
   USERS {
     int user_id PK
@@ -46,9 +47,13 @@ erDiagram
   }
   TITLE_ARCHIVE {
     int archive_id PK
+    int proposal_id FK "nullable"
     varchar title
+    varchar year_level
+    datetime submitted_at
     varchar keywords
     varchar semester_approved
+    datetime approved_at
   }
 ```
 
@@ -122,13 +127,67 @@ CREATE TABLE IF NOT EXISTS tbl_proposal_activity (
 
 CREATE TABLE tbl_title_archive (
   archive_id        INT AUTO_INCREMENT PRIMARY KEY,
+  proposal_id       INT NULL UNIQUE,
   title             VARCHAR(255) NOT NULL,
+  group_name        VARCHAR(100) NOT NULL,
   keywords          VARCHAR(255) NOT NULL,
-  semester_approved VARCHAR(20) NOT NULL
+  semester_approved VARCHAR(20) NOT NULL,
+  year_level        VARCHAR(20) NOT NULL,
+  submitted_at      DATETIME NOT NULL,
+  approved_at       DATETIME NOT NULL,
+  CONSTRAINT fk_title_archive_proposal
+    FOREIGN KEY (proposal_id) REFERENCES tbl_proposals(proposal_id)
+    ON DELETE SET NULL
 ) ENGINE=InnoDB;
 ```
 
 ## Notes
+
+- For an existing database, run this migration so archive snapshots retain
+  their proposal link only while the proposal exists. It also stores year
+  level and submission date independently, so those values survive deletion:
+
+  ```sql
+  ALTER TABLE tbl_title_archive
+    ADD COLUMN year_level VARCHAR(20) NULL,
+    ADD COLUMN submitted_at DATETIME NULL;
+
+  UPDATE tbl_title_archive a
+  INNER JOIN tbl_proposals p ON p.proposal_id = a.proposal_id
+  SET a.year_level = p.year_level,
+      a.submitted_at = p.submitted_at;
+
+  ALTER TABLE tbl_title_archive
+    DROP FOREIGN KEY fk_title_archive_proposal,
+    ADD CONSTRAINT fk_title_archive_proposal
+      FOREIGN KEY (proposal_id) REFERENCES tbl_proposals(proposal_id)
+      ON DELETE SET NULL;
+  ```
+
+  If the existing archive table does not yet have `proposal_id`, run this
+  instead of the foreign-key change above:
+
+  ```sql
+  ALTER TABLE tbl_title_archive
+    ADD COLUMN proposal_id INT NULL,
+    ADD UNIQUE KEY uq_title_archive_proposal_id (proposal_id),
+    ADD CONSTRAINT fk_title_archive_proposal
+      FOREIGN KEY (proposal_id) REFERENCES tbl_proposals(proposal_id)
+      ON DELETE SET NULL;
+  ```
+
+  Archive rows already removed by an earlier cascade cannot be reconstructed
+  from the archive table.
+
+- Existing databases should add the archive metadata columns before deploying
+  the updated application. Nullable columns allow current archive rows to be
+  backfilled before making them required:
+
+  ```sql
+  ALTER TABLE tbl_title_archive
+    ADD COLUMN group_name VARCHAR(100) NULL AFTER title,
+    ADD COLUMN approved_at DATETIME NULL AFTER semester_approved;
+  ```
 
 - Existing databases must create `tbl_proposal_activity` before deploying the
   updated application. This snapshot table intentionally has no foreign key
@@ -142,6 +201,11 @@ CREATE TABLE tbl_title_archive (
 - `tbl_title_archive.keywords` stores the same normalized keyword set the
   `DuplicateChecker` computes at submission time, so archived titles from
   past semesters can be compared without re-tokenizing every lookup.
+- An archive entry is created the first time a proposal is approved and kept
+  if its status later changes or its proposal is deleted. `approved_at` is
+  the first approval date; later approval cycles are recorded in
+  `tbl_status_log` while the proposal exists and do not reset the archive
+  date. Proposal deletion currently removes its status-log rows.
 - Seed at least one `Admin` account directly via SQL (`INSERT INTO
   tbl_users ...`) before first run — there's no self-registration flow for
   Admins in the current scope.

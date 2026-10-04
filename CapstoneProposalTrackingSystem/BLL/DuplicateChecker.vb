@@ -76,6 +76,11 @@ Public Class DuplicateChecker
         Return keywords
     End Function
 
+    Public Shared Function GetKeywordString(title As String) As String
+        Dim keywords As HashSet(Of String) = ExtractKeywords(title)
+        Return String.Join(" ", keywords)
+    End Function
+
     Private Shared Function JaccardSimilarity(setA As HashSet(Of String), setB As HashSet(Of String)) As Double
         If setA.Count = 0 AndAlso setB.Count = 0 Then
             Return 0.0

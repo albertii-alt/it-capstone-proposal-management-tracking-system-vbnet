@@ -171,7 +171,7 @@ Public Class frmAdminShell
     End Sub
 
     Private Sub btnNavTitleArchive_Click(sender As Object, e As EventArgs)
-        LoadContent(CreatePlaceholderContent("Title Archive"), btnNavTitleArchive)
+        LoadContent(New ucTitleArchive(), btnNavTitleArchive)
     End Sub
 
     Private Sub btnNavReports_Click(sender As Object, e As EventArgs)

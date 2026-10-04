@@ -489,9 +489,17 @@ Public Class ucManageProposals
         End If
 
         Dim contextMenu As New ContextMenuStrip()
+        Dim editItem As New ToolStripMenuItem("Edit")
         Dim viewReviewItem As New ToolStripMenuItem("View / Review")
         Dim deleteItem As New ToolStripMenuItem("Delete")
 
+        AddHandler editItem.Click, Sub(menuSender As Object, menuEventArgs As EventArgs)
+            Using editForm As New frmSubmitProposal(proposal)
+                If editForm.ShowDialog(Me.FindForm()) = DialogResult.OK AndAlso FetchProposals() Then
+                    ApplyFiltersAndSort(proposal.ProposalId)
+                End If
+            End Using
+        End Sub
         AddHandler viewReviewItem.Click, Sub(menuSender As Object, menuEventArgs As EventArgs)
             OpenReviewDialog(proposal)
         End Sub
@@ -517,6 +525,7 @@ Public Class ucManageProposals
             End Try
         End Sub
 
+        contextMenu.Items.Add(editItem)
         contextMenu.Items.Add(viewReviewItem)
         contextMenu.Items.Add(deleteItem)
 
@@ -575,7 +584,7 @@ Public Class ucManageProposals
                     proposal.YearLevel,
                     proposal.Semester,
                     FormatStatus(proposal.Status),
-                    proposal.SubmittedAt.ToString("MM/dd/yyyy"))
+                    proposal.SubmittedAt.ToString("MM/dd/yyyy h:mm:ss tt"))
 
                 dgvProposals.Rows(rowIndex).Tag = proposal.ProposalId
             Next

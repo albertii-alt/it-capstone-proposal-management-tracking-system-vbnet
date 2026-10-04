@@ -31,12 +31,36 @@ Public Class ProposalService
         Return ProposalDAL.InsertProposal(proposal, adminActorName)
     End Function
 
+    Public Shared Sub UpdateProposal(proposal As Proposal)
+        If proposal Is Nothing OrElse proposal.ProposalId <= 0 Then
+            Throw New ArgumentException("A valid proposal is required.", NameOf(proposal))
+        End If
+
+        ProposalDAL.UpdateProposal(proposal)
+    End Sub
+
     Public Shared Function GetMyProposals(userId As Integer) As List(Of Proposal)
         Return ProposalDAL.GetProposalsBySubmitter(userId)
     End Function
 
     Public Shared Function GetAllProposals() As List(Of Proposal)
         Return ProposalDAL.GetAllProposals()
+    End Function
+
+    Public Shared Function GetAllArchivedTitles() As List(Of ArchivedTitle)
+        Return ProposalDAL.GetAllArchivedTitles()
+    End Function
+
+    Public Shared Function DeleteArchivedTitles(archiveIds As List(Of Integer)) As Integer
+        If archiveIds Is Nothing Then
+            Throw New ArgumentNullException(NameOf(archiveIds))
+        End If
+
+        If archiveIds.Exists(Function(archiveId) archiveId <= 0) Then
+            Throw New ArgumentOutOfRangeException(NameOf(archiveIds), "Archive IDs must be positive.")
+        End If
+
+        Return ProposalDAL.DeleteArchivedTitles(archiveIds)
     End Function
 
     Public Shared Function DeleteProposal(proposalId As Integer) As Boolean
@@ -77,7 +101,21 @@ Public Class ProposalService
             Throw New ApplicationException("Remarks are required when rejecting a proposal or requesting a revision.")
         End If
 
-        ProposalDAL.UpdateStatusWithLog(proposalId, newStatus, adminId, cleanRemarks)
+        Dim targetProposal As Proposal = Nothing
+        For Each proposal As Proposal In ProposalDAL.GetAllProposals()
+            If proposal.ProposalId = proposalId Then
+                targetProposal = proposal
+                Exit For
+            End If
+        Next
+
+        If targetProposal Is Nothing Then
+            Throw New ApplicationException("That proposal no longer exists.")
+        End If
+
+        Dim keywords As String = DuplicateChecker.GetKeywordString(targetProposal.Title)
+
+        ProposalDAL.UpdateStatusWithLog(proposalId, newStatus, adminId, cleanRemarks, targetProposal.Title, keywords, targetProposal.Semester, targetProposal.GroupName, targetProposal.YearLevel, targetProposal.SubmittedAt)
     End Sub
 
     Public Shared Function CheckDuplicateForExistingProposal(proposalId As Integer, title As String) As DuplicateCheckResult
@@ -119,5 +157,24 @@ Public Class ProposalService
 
     Public Shared Function GetRecentActivity(maxRows As Integer) As List(Of RecentActivityEntry)
         Return StatusLogDAL.GetRecentActivity(maxRows)
+    End Function
+
+    Public Shared Function ResyncArchive() As Integer
+        Dim allProposals As List(Of Proposal) = ProposalDAL.GetAllProposals()
+        Dim resyncedCount As Integer = 0
+
+        For Each proposal As Proposal In allProposals
+            If proposal.Status = ProposalStatus.Approved Then
+                Dim keywords As String = DuplicateChecker.GetKeywordString(proposal.Title)
+                ProposalDAL.UpsertArchiveEntry(proposal.ProposalId, proposal.Title, proposal.GroupName, keywords, proposal.Semester, proposal.YearLevel, proposal.SubmittedAt)
+                resyncedCount += 1
+            End If
+        Next
+
+        Return resyncedCount
+    End Function
+
+    Public Shared Function GetProposalById(proposalId As Integer) As Proposal
+        Return ProposalDAL.GetProposalById(proposalId)
     End Function
 End Class
