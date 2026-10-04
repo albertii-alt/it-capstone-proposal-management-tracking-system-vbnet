@@ -95,13 +95,14 @@ Public Class ucDashboard
 
         headerMeta.Name = "tlpDashboardMeta"
         headerMeta.Dock = DockStyle.Fill
-        headerMeta.ColumnCount = 4
+        headerMeta.ColumnCount = 5
         headerMeta.RowCount = 1
         headerMeta.Padding = New Padding(0, 4, 4, 0)
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 104.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 116.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 56.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 160.0F))
         headerMeta.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         picAdminProfile.Name = "picDashboardAdminProfile"
@@ -166,10 +167,10 @@ Public Class ucDashboard
 
         LoadDashboardProfilePhoto()
 
-        headerMeta.Controls.Add(lblDashboardDate, 0, 0)
-        headerMeta.Controls.Add(lblDashboardTime, 1, 0)
-        headerMeta.Controls.Add(picAdminProfile, 2, 0)
-        headerMeta.Controls.Add(identityLayout, 3, 0)
+        headerMeta.Controls.Add(lblDashboardDate, 1, 0)
+        headerMeta.Controls.Add(lblDashboardTime, 2, 0)
+        headerMeta.Controls.Add(picAdminProfile, 3, 0)
+        headerMeta.Controls.Add(identityLayout, 4, 0)
         headerLayout.Controls.Add(headerTextLayout, 0, 0)
         headerLayout.Controls.Add(headerMeta, 1, 0)
         lblPendingCount.Name = "lblPendingCount"
