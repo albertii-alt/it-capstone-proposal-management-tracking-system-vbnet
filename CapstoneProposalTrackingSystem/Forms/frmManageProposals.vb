@@ -6,7 +6,7 @@ Public Class frmManageProposals
     Private _isLoading As Boolean = False
 
     Private Sub frmManageProposals_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        If Session.CurrentUser Is Nothing OrElse Session.CurrentUser.Role <> UserRole.Admin Then
+        If Session.CurrentUser Is Nothing OrElse Not UserRoleHelper.IsAdministrator(Session.CurrentUser.Role) Then
             MessageBox.Show("Access denied.")
             Me.Close()
             Return

@@ -153,7 +153,7 @@ Public Class frmAdminShell
 
     Private Sub frmAdminShell_Load(sender As Object, e As EventArgs)
         FormDisplayHelper.MaximizeFullScreen(Me)
-        If Session.CurrentUser Is Nothing OrElse Session.CurrentUser.Role <> UserRole.Admin Then
+        If Session.CurrentUser Is Nothing OrElse Not UserRoleHelper.IsAdministrator(Session.CurrentUser.Role) Then
             MessageBox.Show("Access denied.")
             Me.Close()
             Return
@@ -175,11 +175,11 @@ Public Class frmAdminShell
     End Sub
 
     Private Sub btnNavReports_Click(sender As Object, e As EventArgs)
-        LoadContent(CreatePlaceholderContent("Reports"), btnNavReports)
+        LoadContent(New ucReports(), btnNavReports)
     End Sub
 
     Private Sub btnNavManageAccounts_Click(sender As Object, e As EventArgs)
-        LoadContent(CreatePlaceholderContent("Manage Accounts"), btnNavManageAccounts)
+        LoadContent(New ucManageAccounts(), btnNavManageAccounts)
     End Sub
 
     Private Sub btnNavLogout_Click(sender As Object, e As EventArgs)

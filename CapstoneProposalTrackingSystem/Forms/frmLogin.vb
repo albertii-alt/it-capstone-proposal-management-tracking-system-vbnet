@@ -26,7 +26,13 @@
             Return
         End If
 
-        Dim user As User = AuthService.Login(username, password)
+        Dim user As User
+        Try
+            user = AuthService.Login(username, password)
+        Catch ex As ApplicationException
+            lblStatus.Text = ex.Message
+            Return
+        End Try
 
         If user Is Nothing Then
             lblStatus.Text = "Invalid username or password."
@@ -39,7 +45,7 @@
             Case UserRole.Student
                 Dim studentForm As New frmStudentDashboard()
                 studentForm.Show()
-            Case UserRole.Admin
+            Case UserRole.Admin, UserRole.SuperAdmin
                 Dim adminForm As New frmAdminShell()
                 adminForm.Show()
         End Select

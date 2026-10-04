@@ -24,7 +24,7 @@ Public Class ProposalService
         proposal.Status = ProposalStatus.Pending
 
         Dim adminActorName As String = Nothing
-        If submittingUser IsNot Nothing AndAlso submittingUser.Role = UserRole.Admin Then
+        If submittingUser IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(submittingUser.Role) Then
             adminActorName = submittingUser.FullName
         End If
 

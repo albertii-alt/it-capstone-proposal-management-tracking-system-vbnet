@@ -78,7 +78,7 @@ exception).
 | `Proposal` | Id, Title, Description, Course, YearLevel, Semester, Status (enum), SubmittedBy, SubmittedAt |
 | `ProposalMember` | Id, ProposalId, MemberName |
 | `StatusLogEntry` | Id, ProposalId, AdminId, OldStatus, NewStatus, Remarks, ChangedAt |
-| `UserRole` (enum) | `Student`, `Admin` |
+| `UserRole` (enum) | `Student`, `Admin`, `SuperAdmin` (protected setup-only role) |
 | `ProposalStatus` (enum) | `Pending`, `Approved`, `Rejected`, `ForRevision` |
 
 ## Solution / folder structure

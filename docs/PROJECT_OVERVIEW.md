@@ -61,7 +61,7 @@ account absorbs those review responsibilities.
 
 ## Features
 
-1. **User authentication** — role-based login (Student/Admin), hashed
+1. **User authentication** — role-based login (Student/Admin/SuperAdmin), hashed
    passwords.
 2. **Proposal submission form** — group leader, members, course, year
    level, title, description, preferred semester; required-field

@@ -11,6 +11,10 @@
             Return Nothing
         End If
 
+        If Not user.IsActive Then
+            Throw New ApplicationException("This account has been deactivated. Contact the administrator.")
+        End If
+
         Return user
     End Function
 

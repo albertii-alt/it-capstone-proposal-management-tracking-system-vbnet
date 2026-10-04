@@ -9,13 +9,11 @@ Companion docs: `docs/PROJECT_OVERVIEW.md`, `docs/ARCHITECTURE.md`,
 
 A department-level system for Trinidad Municipal College's IT Department that
 digitizes the capstone proposal process: submission, duplicate-title
-checking, review/approval, and archiving of approved titles. Originally
-scoped with three roles (Student, Faculty Adviser, Admin); **the instructor
-has since simplified this to two roles only: Student and Admin.** The Admin
-now performs everything the Faculty Adviser used to do (review proposals,
-set status, write remarks) in addition to admin-only duties (accounts,
-archive, reports). Do not reintroduce a separate adviser/staff role, table,
-or form unless explicitly asked.
+checking, review/approval, and archiving of approved titles. The application
+has three roles: Student, Admin, and SuperAdmin. Admin performs review and
+ordinary account-management duties; SuperAdmin is the protected owner role
+for system-level account administration. Do not reintroduce a separate
+adviser/staff role, table, or form unless explicitly asked.
 
 ## Tech stack — do not substitute without being asked
 
@@ -53,9 +51,11 @@ Full class-by-class breakdown is in `docs/ARCHITECTURE.md`.
 
 ## Roles and access control
 
-- Two roles only: `Student`, `Admin`. Stored in `tbl_users.role`.
+- Roles: `Student`, `Admin`, `SuperAdmin`. Stored in `tbl_users.role`.
+- Only the protected setup migration may assign `SuperAdmin`. The application
+  must never permit deleting, deactivating, or demoting a SuperAdmin account.
 - After login, branch on role to load `frmStudentDashboard` or
-  `frmAdminDashboard`. Do not add a third branch.
+  the admin experience for `Admin` and `SuperAdmin`.
 - Admin forms (`frmManageProposals`, `frmTitleArchive`, `frmReports`,
   `frmManageAccounts`) must never be reachable from the Student session, and
   vice versa — check role at form-load, not just by hiding menu buttons.

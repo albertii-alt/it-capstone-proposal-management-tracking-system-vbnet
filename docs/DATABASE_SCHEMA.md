@@ -1,7 +1,8 @@
 # Database schema — IT Capstone Proposal Management and Tracking System
 
-MySQL. Two roles only (`Student`, `Admin`) — there is no adviser/staff
-table.
+MySQL. Roles are `Student`, `Admin`, and protected `SuperAdmin` — there is no
+adviser/staff table. The `SuperAdmin` role is provisioned only by the setup
+migration and cannot be assigned from the application.
 
 ## ERD
 
@@ -16,7 +17,7 @@ erDiagram
     int user_id PK
     varchar username
     varchar password_hash
-    enum role
+    enum role "Student | Admin | SuperAdmin"
     varchar full_name
     varchar email
   }
@@ -69,7 +70,7 @@ CREATE TABLE tbl_users (
   user_id       INT AUTO_INCREMENT PRIMARY KEY,
   username      VARCHAR(50)  NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
-  role          ENUM('Student', 'Admin') NOT NULL,
+  role          ENUM('Student', 'Admin', 'SuperAdmin') NOT NULL,
   full_name     VARCHAR(100) NOT NULL,
   email         VARCHAR(100) NOT NULL UNIQUE,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -142,6 +143,16 @@ CREATE TABLE tbl_title_archive (
 ```
 
 ## Notes
+
+- Before deploying the Super Admin role to an existing database, run
+  `docs/migrations/001_add_super_admin_role.sql`. It promotes the lowest-ID
+  existing Admin (the earliest-created account) unless a Super Admin already
+  exists. Review the script's result and confirm exactly one protected account
+  is present before deploying the application.
+- The application does not allow Super Admin accounts to be created,
+  demoted, deactivated, or deleted. Ordinary Admins cannot edit or reset the
+  protected account; the Super Admin can edit its profile and reset its own
+  password. Retain the setup migration as the recovery path.
 
 - For an existing database, run this migration so archive snapshots retain
   their proposal link only while the proposal exists. It also stores year
