@@ -1,4 +1,23 @@
 ﻿Public Class frmLogin
+    Private ReadOnly btnRegister As New Button()
+
+    Public Sub New()
+        InitializeComponent()
+        btnRegister.Text = "Register as Student"
+        btnRegister.FlatStyle = FlatStyle.Flat
+        btnRegister.FlatAppearance.BorderSize = 0
+        btnRegister.BackColor = Color.Transparent
+        btnRegister.ForeColor = Color.FromArgb(122, 31, 46)
+        btnRegister.Font = New Font("Segoe UI", 8.5F, FontStyle.Underline)
+        btnRegister.Size = New Size(150, 28)
+        btnRegister.Cursor = Cursors.Hand
+        btnRegister.TabStop = False
+        AddHandler btnRegister.Click, AddressOf btnRegister_Click
+        pnlLoginCard.Controls.Add(btnRegister)
+        btnRegister.Left = btnLogin.Left + (btnLogin.Width - btnRegister.Width) \ 2
+        btnRegister.Top = btnLogin.Bottom + 6
+    End Sub
+
     Private Sub frmLogin_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         FormDisplayHelper.MaximizeFullScreen(Me)
         FormDisplayHelper.CenterCardInContainer(Me, pnlLoginBox)
@@ -59,5 +78,11 @@
 
     Private Sub chkShowPassword_CheckedChanged(sender As Object, e As EventArgs) Handles chkShowPassword.CheckedChanged
         txtPassword.PasswordChar = If(chkShowPassword.Checked, ChrW(0), "*"c)
+    End Sub
+
+    Private Sub btnRegister_Click(sender As Object, e As EventArgs)
+        Using registrationForm As New frmStudentRegistration()
+            registrationForm.ShowDialog(Me)
+        End Using
     End Sub
 End Class

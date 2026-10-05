@@ -20,6 +20,7 @@ Public Class frmAdminShell
     Private ReadOnly btnNavTitleArchive As New Button()
     Private ReadOnly btnNavReports As New Button()
     Private ReadOnly btnNavManageAccounts As New Button()
+    Private ReadOnly btnNavStudentRegistrations As New Button()
     Private ReadOnly btnNavActivityLogs As New Button()
     Private ReadOnly btnNavLoginActivity As New Button()
     Private ReadOnly btnNavSecurityLogs As New Button()
@@ -35,6 +36,7 @@ Public Class frmAdminShell
         AddHandler btnNavTitleArchive.Click, AddressOf btnNavTitleArchive_Click
         AddHandler btnNavReports.Click, AddressOf btnNavReports_Click
         AddHandler btnNavManageAccounts.Click, AddressOf btnNavManageAccounts_Click
+        AddHandler btnNavStudentRegistrations.Click, AddressOf btnNavStudentRegistrations_Click
         AddHandler btnNavActivityLogs.Click, AddressOf btnNavActivityLogs_Click
         AddHandler btnNavLoginActivity.Click, AddressOf btnNavLoginActivity_Click
         AddHandler btnNavSecurityLogs.Click, AddressOf btnNavSecurityLogs_Click
@@ -99,6 +101,7 @@ Public Class frmAdminShell
         ConfigureNavButton(btnNavTitleArchive, "btnNavTitleArchive", "Title Archive", ChrW(&HE7B8))
         ConfigureNavButton(btnNavReports, "btnNavReports", "Reports", ChrW(&HE9D2))
         ConfigureNavButton(btnNavManageAccounts, "btnNavManageAccounts", "Manage Accounts", ChrW(&HE716))
+        ConfigureNavButton(btnNavStudentRegistrations, "btnNavStudentRegistrations", "Student Registrations", ChrW(&HE77B))
         ConfigureNavButton(btnNavActivityLogs, "btnNavActivityLogs", "Activity Logs", ChrW(&HE9D9))
         ConfigureNavButton(btnNavLoginActivity, "btnNavLoginActivity", "My Login Activity", ChrW(&HE81C))
         ConfigureNavButton(btnNavSecurityLogs, "btnNavSecurityLogs", "Security Logs", ChrW(&HE72E))
@@ -130,6 +133,7 @@ Public Class frmAdminShell
         pnlSidebar.Controls.Add(btnNavLoginActivity)
         pnlSidebar.Controls.Add(btnNavActivityLogs)
         pnlSidebar.Controls.Add(btnNavManageAccounts)
+        pnlSidebar.Controls.Add(btnNavStudentRegistrations)
         pnlSidebar.Controls.Add(btnNavReports)
         pnlSidebar.Controls.Add(btnNavTitleArchive)
         pnlSidebar.Controls.Add(btnNavManageProposals)
@@ -210,6 +214,7 @@ Public Class frmAdminShell
             btnNavTitleArchive,
             btnNavReports,
             btnNavManageAccounts,
+            btnNavStudentRegistrations,
             btnNavActivityLogs,
             btnNavLoginActivity,
             btnNavSecurityLogs,
@@ -293,6 +298,10 @@ Public Class frmAdminShell
 
     Private Sub btnNavManageAccounts_Click(sender As Object, e As EventArgs)
         LoadContent(New ucManageAccounts(), btnNavManageAccounts)
+    End Sub
+
+    Private Sub btnNavStudentRegistrations_Click(sender As Object, e As EventArgs)
+        LoadContent(New ucStudentRegistrations(), btnNavStudentRegistrations)
     End Sub
 
     Private Sub btnNavActivityLogs_Click(sender As Object, e As EventArgs)

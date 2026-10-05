@@ -15,6 +15,13 @@ Public Class AuthService
             Return Nothing
         End If
 
+        If String.Equals(user.AccountStatus, "Pending", StringComparison.OrdinalIgnoreCase) Then
+            Throw New ApplicationException("Your account is awaiting administrator approval.")
+        End If
+        If String.Equals(user.AccountStatus, "Rejected", StringComparison.OrdinalIgnoreCase) Then
+            Throw New ApplicationException("Your registration was rejected. Please contact the administrator.")
+        End If
+
         If Not user.IsActive Then
             SecurityLogService.Record(user.UserId, user.Username, "Blocked Login", "The account is deactivated.")
             Throw New ApplicationException("This account has been deactivated. Contact the administrator.")

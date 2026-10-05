@@ -3,6 +3,7 @@ Option Explicit On
 
 Imports System.Collections.Generic
 Imports System.Net.Mail
+Imports System.Text.RegularExpressions
 Imports MySql.Data.MySqlClient
 
 Public Class UserService
@@ -179,6 +180,7 @@ Public Class UserService
             .Email = email.Trim(),
             .Role = role,
             .IsActive = True,
+            .AccountStatus = "Approved",
             .PasswordHash = PasswordHasher.HashPassword(plainPassword)
         }
 
@@ -192,6 +194,87 @@ Public Class UserService
         End If
         Return newUserId
     End Function
+
+    Public Shared Function RegisterStudent(schoolId As String, username As String, fullName As String, email As String, plainPassword As String) As Integer
+        If String.IsNullOrWhiteSpace(schoolId) OrElse
+           String.IsNullOrWhiteSpace(username) OrElse
+           String.IsNullOrWhiteSpace(fullName) OrElse
+           String.IsNullOrWhiteSpace(email) Then
+            Throw New ApplicationException("School ID, username, full name, and email are all required.")
+        End If
+
+        Dim normalizedSchoolId As String = schoolId.Trim()
+        If Not Regex.IsMatch(normalizedSchoolId, "^[0-9]{2}-[0-9]{6}$") Then
+            Throw New ApplicationException("Enter a valid school ID using the format 24-018701.")
+        End If
+        If username.Trim().Length > 50 OrElse fullName.Trim().Length > 100 OrElse email.Trim().Length > 100 Then
+            Throw New ApplicationException("School ID, username, full name, or email exceeds the allowed length.")
+        End If
+        If String.IsNullOrWhiteSpace(plainPassword) OrElse plainPassword.Length < 6 Then
+            Throw New ApplicationException("Password must be at least 6 characters.")
+        End If
+
+        Try
+            Dim parsedEmail As New MailAddress(email.Trim())
+            If parsedEmail.Address <> email.Trim() Then Throw New ApplicationException("Enter a valid email address.")
+        Catch ex As FormatException
+            Throw New ApplicationException("Enter a valid email address.", ex)
+        End Try
+
+        Dim newUser As New User With {
+            .SchoolId = normalizedSchoolId,
+            .Username = username.Trim(),
+            .FullName = fullName.Trim(),
+            .Email = email.Trim(),
+            .Role = UserRole.Student,
+            .IsActive = False,
+            .AccountStatus = "Pending",
+            .PasswordHash = PasswordHasher.HashPassword(plainPassword),
+            .RegisteredAt = DateTime.Now
+        }
+
+        Try
+            Return UserDAL.CreateUser(newUser)
+        Catch ex As MySqlException
+            Throw New ApplicationException("Could not submit the registration. Please try again.", ex)
+        End Try
+    End Function
+
+    Public Shared Function GetPendingStudentRegistrations() As List(Of User)
+        Try
+            Return UserDAL.GetPendingStudentUsers()
+        Catch ex As MySqlException
+            Throw New ApplicationException("Could not load student registrations. Please try again.", ex)
+        End Try
+    End Function
+
+    Public Shared Sub ReviewStudentRegistration(userId As Integer, approve As Boolean, reviewerId As Integer, remarks As String)
+        If reviewerId <= 0 Then Throw New ApplicationException("A valid administrator is required.")
+        Dim reviewer As User = UserDAL.GetUserById(reviewerId)
+        If reviewer Is Nothing OrElse Not UserRoleHelper.IsAdministrator(reviewer.Role) Then
+            Throw New ApplicationException("Only an administrator can review student registrations.")
+        End If
+
+        Dim target As User = UserDAL.GetUserById(userId)
+        If target Is Nothing OrElse target.Role <> UserRole.Student Then
+            Throw New ApplicationException("That student registration no longer exists.")
+        End If
+
+        Dim newStatus As String = If(approve, "Approved", "Rejected")
+        UserDAL.ReviewStudentAccount(userId, newStatus, approve, reviewerId, remarks)
+        AdminActivityLogService.Record(reviewer,
+                                       If(approve, "Approved", "Rejected"),
+                                       "Student Registration",
+                                       target.UserId,
+                                       target.FullName,
+                                       If(approve,
+                                          "Approved the student registration for " & target.FullName & " (" & target.SchoolId & ").",
+                                          "Rejected the student registration for " & target.FullName & " (" & target.SchoolId & ")."),
+                                       If(String.IsNullOrWhiteSpace(remarks), Nothing, "Remarks: " & remarks.Trim()))
+        SecurityLogService.Record(reviewer.UserId, reviewer.Username,
+                                  If(approve, "Student Registration Approved", "Student Registration Rejected"),
+                                  If(approve, "Approved ", "Rejected ") & target.FullName & "'s registration (" & target.SchoolId & ").")
+    End Sub
 
     Public Shared Sub UpdateUser(userId As Integer, username As String, fullName As String, email As String, role As UserRole, currentAdminUserId As Integer)
         If String.IsNullOrWhiteSpace(username) OrElse String.IsNullOrWhiteSpace(fullName) OrElse String.IsNullOrWhiteSpace(email) Then

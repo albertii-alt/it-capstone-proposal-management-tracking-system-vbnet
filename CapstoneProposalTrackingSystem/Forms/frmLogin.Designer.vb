@@ -164,10 +164,10 @@ Partial Class frmLogin
         ' 
         lblStatus.AutoSize = False
         lblStatus.ForeColor = Color.Red
-        lblStatus.Location = New Point(30, 379)
+        lblStatus.Location = New Point(30, 400)
         lblStatus.Margin = New Padding(4, 0, 4, 0)
         lblStatus.Name = "lblStatus"
-        lblStatus.Size = New Size(360, 24)
+        lblStatus.Size = New Size(360, 20)
         lblStatus.TabIndex = 6
         lblStatus.TextAlign = ContentAlignment.MiddleCenter
         ' 
