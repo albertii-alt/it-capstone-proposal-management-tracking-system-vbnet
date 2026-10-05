@@ -149,6 +149,10 @@ Public Class ProposalService
         Return StatusLogDAL.GetLatestLogForProposal(proposalId)
     End Function
 
+    Public Shared Function GetStatusLogs(proposalId As Integer) As List(Of StatusLogEntry)
+        Return StatusLogDAL.GetLogsForProposal(proposalId)
+    End Function
+
     Public Shared Function GetStatusCounts() As Dictionary(Of ProposalStatus, Integer)
         Dim counts As New Dictionary(Of ProposalStatus, Integer) From {
             {ProposalStatus.Pending, 0},

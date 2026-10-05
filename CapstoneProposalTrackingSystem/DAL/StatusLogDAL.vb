@@ -46,6 +46,43 @@ Public Class StatusLogDAL
         Return log
     End Function
 
+    Public Shared Function GetLogsForProposal(proposalId As Integer) As List(Of StatusLogEntry)
+        Dim logs As New List(Of StatusLogEntry)()
+
+        Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
+            conn.Open()
+
+            Dim query As String = "SELECT log_id, proposal_id, admin_id, old_status, new_status, remarks, changed_at " &
+                                  "FROM tbl_status_log WHERE proposal_id = @proposal_id " &
+                                  "ORDER BY changed_at DESC, log_id DESC"
+
+            Using cmd As New MySqlCommand(query, conn)
+                cmd.Parameters.AddWithValue("@proposal_id", proposalId)
+
+                Using reader As MySqlDataReader = cmd.ExecuteReader()
+                    While reader.Read()
+                        Dim log As New StatusLogEntry With {
+                            .LogId = reader.GetInt32("log_id"),
+                            .ProposalId = reader.GetInt32("proposal_id"),
+                            .AdminId = reader.GetInt32("admin_id"),
+                            .NewStatus = CType([Enum].Parse(GetType(ProposalStatus), reader.GetString("new_status")), ProposalStatus),
+                            .Remarks = If(reader.IsDBNull(reader.GetOrdinal("remarks")), "", reader.GetString("remarks")),
+                            .ChangedAt = reader.GetDateTime("changed_at")
+                        }
+
+                        If Not reader.IsDBNull(reader.GetOrdinal("old_status")) Then
+                            log.OldStatus = CType([Enum].Parse(GetType(ProposalStatus), reader.GetString("old_status")), ProposalStatus)
+                        End If
+
+                        logs.Add(log)
+                    End While
+                End Using
+            End Using
+        End Using
+
+        Return logs
+    End Function
+
     Public Shared Sub InsertLog(log As StatusLogEntry)
         Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
             conn.Open()
