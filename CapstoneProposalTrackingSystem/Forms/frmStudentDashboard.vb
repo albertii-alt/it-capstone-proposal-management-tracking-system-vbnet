@@ -220,33 +220,155 @@ Public Class frmStudentDashboard
     Private Sub ShowDashboard()
         Dim dashboard As New UserControl With {.BackColor = SystemColors.Control}
         Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .Padding = New Padding(20), .ColumnCount = 1, .RowCount = 3}
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 112.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 130.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 92.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 104.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
-        Dim title As New Label With {.Text = "Dashboard", .Dock = DockStyle.Fill, .Font = New Font("Segoe UI", 23.0F, FontStyle.Bold), .ForeColor = Color.FromArgb(45, 45, 45), .TextAlign = ContentAlignment.MiddleLeft, .Padding = New Padding(0, 5, 0, 0)}
-        layout.Controls.Add(title, 0, 0)
-        Dim counts As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 4}
-        For index As Integer = 0 To 3
-            counts.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 25.0F))
+        Dim header As New Panel With {.Dock = DockStyle.Fill}
+        header.Controls.Add(New Label With {.Text = "Dashboard", .Dock = DockStyle.Top, .Height = 58, .Font = New Font("Segoe UI", 23.0F, FontStyle.Bold), .ForeColor = Color.FromArgb(45, 45, 45), .Padding = New Padding(0, 4, 0, 0)})
+        header.Controls.Add(New Label With {.Text = "Welcome back, " & Session.CurrentUser.FullName & ". Here's an overview of your capstone proposals.", .Dock = DockStyle.Bottom, .Height = 26, .ForeColor = Color.DimGray})
+        layout.Controls.Add(header, 0, 0)
+
+        Dim counts As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 5}
+        For index As Integer = 0 To 4
+            counts.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 20.0F))
         Next
         Dim proposals As List(Of Proposal) = ProposalService.GetMyProposals(Session.CurrentUser.UserId)
         AddMetric(counts, "Total Proposals", proposals.Count, 0)
         AddMetric(counts, "Pending", proposals.Where(Function(item) item.Status = ProposalStatus.Pending).Count(), 1)
         AddMetric(counts, "Approved", proposals.Where(Function(item) item.Status = ProposalStatus.Approved).Count(), 2)
         AddMetric(counts, "For Revision", proposals.Where(Function(item) item.Status = ProposalStatus.ForRevision).Count(), 3)
+        AddMetric(counts, "Rejected", proposals.Where(Function(item) item.Status = ProposalStatus.Rejected).Count(), 4)
         layout.Controls.Add(counts, 0, 1)
-        Dim welcome As New Label With {.Text = "Welcome, " & Session.CurrentUser.FullName & "." & Environment.NewLine & "Use the sidebar to submit proposals, review feedback, and manage your account.", .Dock = DockStyle.Top, .Height = 70, .Font = New Font("Segoe UI", 11.0F), .ForeColor = Color.DimGray}
-        layout.Controls.Add(welcome, 0, 2)
+
+        Dim content As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 2, .RowCount = 1}
+        content.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 58.0F))
+        content.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 42.0F))
+        Dim leftColumn As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 1, .RowCount = 2, .Margin = New Padding(0, 10, 8, 0)}
+        leftColumn.RowStyles.Add(New RowStyle(SizeType.Percent, 58.0F))
+        leftColumn.RowStyles.Add(New RowStyle(SizeType.Percent, 42.0F))
+        leftColumn.Controls.Add(CreateRecentActivityCard(proposals), 0, 0)
+        leftColumn.Controls.Add(CreateLatestProposalCard(proposals), 0, 1)
+        Dim rightColumn As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 1, .RowCount = 3, .Margin = New Padding(8, 10, 0, 0)}
+        rightColumn.RowStyles.Add(New RowStyle(SizeType.Percent, 43.0F))
+        rightColumn.RowStyles.Add(New RowStyle(SizeType.Percent, 32.0F))
+        rightColumn.RowStyles.Add(New RowStyle(SizeType.Percent, 25.0F))
+        rightColumn.Controls.Add(CreateAttentionCard(proposals), 0, 0)
+        rightColumn.Controls.Add(CreateQuickActionsCard(), 0, 1)
+        rightColumn.Controls.Add(CreateProfileCompletionCard(), 0, 2)
+        content.Controls.Add(leftColumn, 0, 0)
+        content.Controls.Add(rightColumn, 1, 0)
+        layout.Controls.Add(content, 0, 2)
         dashboard.Controls.Add(layout)
         ShowView(dashboard, "Dashboard")
     End Sub
 
     Private Sub AddMetric(parent As TableLayoutPanel, caption As String, value As Integer, column As Integer)
-        Dim panel As New Panel With {.Dock = DockStyle.Fill, .BackColor = SystemColors.Window, .Margin = New Padding(0, 0, 12, 0)}
+        Dim panel As New Panel With {.Dock = DockStyle.Fill, .BackColor = SystemColors.Window, .Margin = New Padding(0, 0, 10, 0)}
         panel.Controls.Add(New Label With {.Text = value.ToString(), .Dock = DockStyle.Top, .Height = 58, .Font = New Font("Segoe UI", 22.0F, FontStyle.Bold), .ForeColor = sidebarColor, .TextAlign = ContentAlignment.MiddleCenter})
         panel.Controls.Add(New Label With {.Text = caption, .Dock = DockStyle.Bottom, .Height = 36, .Font = New Font("Segoe UI", 9.0F), .ForeColor = Color.DimGray, .TextAlign = ContentAlignment.MiddleCenter})
         parent.Controls.Add(panel, column, 0)
     End Sub
+
+    Private Function CreateCard(title As String) As TableLayoutPanel
+        Dim card As New TableLayoutPanel With {.Dock = DockStyle.Fill, .BackColor = SystemColors.Window, .ColumnCount = 1, .RowCount = 2, .Padding = New Padding(14), .Margin = New Padding(0, 0, 0, 8)}
+        card.RowStyles.Add(New RowStyle(SizeType.Absolute, 30.0F))
+        card.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        card.Controls.Add(New Label With {.Text = title, .Dock = DockStyle.Fill, .Font = New Font("Segoe UI", 11.0F, FontStyle.Bold), .ForeColor = sidebarColor, .TextAlign = ContentAlignment.MiddleLeft}, 0, 0)
+        Return card
+    End Function
+
+    Private Function CreateRecentActivityCard(proposals As List(Of Proposal)) As Control
+        Dim card As TableLayoutPanel = CreateCard("Recent Activity")
+        Dim body As New FlowLayoutPanel With {.Dock = DockStyle.Fill, .FlowDirection = FlowDirection.TopDown, .WrapContents = False, .AutoScroll = True}
+        Dim activities As New List(Of String)()
+        For Each proposal As Proposal In proposals
+            activities.Add(proposal.SubmittedAt.ToString("MMM d, h:mm tt") & "  •  Submitted """ & proposal.Title & """")
+            For Each log As StatusLogEntry In ProposalService.GetStatusLogs(proposal.ProposalId).Take(3)
+                activities.Add(log.ChangedAt.ToString("MMM d, h:mm tt") & "  •  " & FormatStatus(log.NewStatus) & " """ & proposal.Title & """")
+            Next
+        Next
+        If activities.Count = 0 Then activities.Add("No proposal activity yet. Submit your first proposal to get started.")
+        For Each activity As String In activities.Take(6)
+            body.Controls.Add(New Label With {.Text = activity, .AutoSize = False, .Width = 500, .Height = 28, .ForeColor = Color.FromArgb(75, 75, 75), .Padding = New Padding(0, 4, 0, 0)})
+        Next
+        card.Controls.Add(body, 0, 1)
+        Return card
+    End Function
+
+    Private Function CreateLatestProposalCard(proposals As List(Of Proposal)) As Control
+        Dim card As TableLayoutPanel = CreateCard("Latest Proposal")
+        Dim body As New Panel With {.Dock = DockStyle.Fill}
+        Dim latest As Proposal = proposals.OrderByDescending(Function(item) item.SubmittedAt).FirstOrDefault()
+        If latest Is Nothing Then
+            body.Controls.Add(New Label With {.Text = "No proposal submitted yet.", .Dock = DockStyle.Fill, .ForeColor = Color.DimGray, .TextAlign = ContentAlignment.MiddleLeft})
+        Else
+            body.Controls.Add(New Label With {.Text = latest.Title, .Dock = DockStyle.Top, .Height = 28, .Font = New Font("Segoe UI", 10.0F, FontStyle.Bold), .ForeColor = Color.FromArgb(55, 55, 55)})
+            body.Controls.Add(New Label With {.Text = "Submitted " & latest.SubmittedAt.ToString("MMMM d, yyyy h:mm tt") & "   •   Status: " & FormatStatus(latest.Status), .Dock = DockStyle.Top, .Height = 25, .ForeColor = Color.DimGray})
+            Dim latestLog As StatusLogEntry = ProposalService.GetLatestLog(latest.ProposalId)
+            body.Controls.Add(New Label With {.Text = If(latestLog Is Nothing OrElse String.IsNullOrWhiteSpace(latestLog.Remarks), "No administrator remarks.", "Administrator remark: " & latestLog.Remarks), .Dock = DockStyle.Fill, .ForeColor = Color.DimGray, .AutoEllipsis = True})
+        End If
+        card.Controls.Add(body, 0, 1)
+        Return card
+    End Function
+
+    Private Function CreateAttentionCard(proposals As List(Of Proposal)) As Control
+        Dim card As TableLayoutPanel = CreateCard("Needs Your Attention")
+        Dim body As New FlowLayoutPanel With {.Dock = DockStyle.Fill, .FlowDirection = FlowDirection.TopDown, .WrapContents = False, .AutoScroll = True}
+        Dim revisions As List(Of Proposal) = proposals.Where(Function(item) item.Status = ProposalStatus.ForRevision).ToList()
+        If revisions.Count = 0 Then
+            body.Controls.Add(New Label With {.Text = "You're all caught up. No proposals require action.", .AutoSize = False, .Width = 350, .Height = 30, .ForeColor = Color.DarkGreen})
+        Else
+            For Each proposal As Proposal In revisions.Take(3)
+                body.Controls.Add(New Label With {.Text = "Revision requested: " & proposal.Title, .AutoSize = False, .Width = 350, .Height = 34, .ForeColor = Color.FromArgb(150, 90, 20), .Padding = New Padding(0, 4, 0, 0)})
+            Next
+        End If
+        card.Controls.Add(body, 0, 1)
+        Return card
+    End Function
+
+    Private Function CreateQuickActionsCard() As Control
+        Dim card As TableLayoutPanel = CreateCard("Quick Actions")
+        Dim actions As New FlowLayoutPanel With {.Dock = DockStyle.Fill, .WrapContents = True, .AutoScroll = True}
+        AddDashboardAction(actions, "Submit New Proposal", AddressOf SubmitDashboardProposal)
+        AddDashboardAction(actions, "View My Proposals", AddressOf ShowProposals)
+        AddDashboardAction(actions, "View History", AddressOf ShowHistory)
+        AddDashboardAction(actions, "Edit Profile", AddressOf ShowProfile)
+        card.Controls.Add(actions, 0, 1)
+        Return card
+    End Function
+
+    Private Function CreateProfileCompletionCard() As Control
+        Dim card As TableLayoutPanel = CreateCard("Profile Status")
+        Dim fields As Integer = 0
+        If Not String.IsNullOrWhiteSpace(Session.CurrentUser.FullName) Then fields += 1
+        If Not String.IsNullOrWhiteSpace(Session.CurrentUser.Email) Then fields += 1
+        If Not String.IsNullOrWhiteSpace(Session.CurrentUser.SchoolId) Then fields += 1
+        If Session.CurrentUser.ProfilePhoto IsNot Nothing AndAlso Session.CurrentUser.ProfilePhoto.Length > 0 Then fields += 1
+        Dim body As New Panel With {.Dock = DockStyle.Fill}
+        body.Controls.Add(New Label With {.Text = fields.ToString() & " of 4 profile details completed", .Dock = DockStyle.Top, .Height = 24, .ForeColor = Color.DimGray})
+        body.Controls.Add(New ProgressBar With {.Value = fields * 25, .Maximum = 100, .Dock = DockStyle.Top, .Height = 16, .Style = ProgressBarStyle.Continuous})
+        card.Controls.Add(body, 0, 1)
+        Return card
+    End Function
+
+    Private Sub AddDashboardAction(parent As FlowLayoutPanel, text As String, handler As EventHandler)
+        Dim button As New Button With {.Text = text, .AutoSize = True, .Height = 28, .FlatStyle = FlatStyle.Flat, .BackColor = Color.FromArgb(122, 31, 46), .ForeColor = Color.White, .Margin = New Padding(0, 0, 8, 6)}
+        button.FlatAppearance.BorderSize = 0
+        AddHandler button.Click, handler
+        parent.Controls.Add(button)
+    End Sub
+
+    Private Sub SubmitDashboardProposal(sender As Object, e As EventArgs)
+        Using dialog As New frmSubmitProposal()
+            dialog.ShowDialog(Me)
+        End Using
+        ShowDashboard()
+    End Sub
+
+    Private Shared Function FormatStatus(status As ProposalStatus) As String
+        If status = ProposalStatus.ForRevision Then Return "For Revision"
+        Return status.ToString()
+    End Function
 
     Private Sub ShowProposals(sender As Object, e As EventArgs)
         ShowProposals()
