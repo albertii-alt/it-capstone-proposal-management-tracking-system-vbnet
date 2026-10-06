@@ -12,8 +12,9 @@ Public Class AdminActivityLogDAL
             conn.Open()
             Dim query As String =
                 "INSERT INTO tbl_admin_activity_log " &
-                "(actor_id, actor_name, action_type, entity_type, entity_id, entity_name, description, metadata) " &
-                "VALUES (@actor_id, @actor_name, @action_type, @entity_type, @entity_id, @entity_name, @description, @metadata)"
+                "(actor_id, actor_name, action_type, entity_type, entity_id, entity_name, description, metadata, created_at) " &
+                "VALUES (@actor_id, @actor_name, @action_type, @entity_type, @entity_id, @entity_name, @description, @metadata, " &
+                "IFNULL(@created_at, CURRENT_TIMESTAMP))"
 
             Using cmd As New MySqlCommand(query, conn)
                 cmd.Parameters.AddWithValue("@actor_id", If(entry.ActorId.HasValue, CType(entry.ActorId.Value, Object), DBNull.Value))
@@ -24,6 +25,7 @@ Public Class AdminActivityLogDAL
                 cmd.Parameters.AddWithValue("@entity_name", If(entry.EntityName, CType(DBNull.Value, Object)))
                 cmd.Parameters.AddWithValue("@description", entry.Description)
                 cmd.Parameters.AddWithValue("@metadata", If(entry.Metadata, CType(DBNull.Value, Object)))
+                cmd.Parameters.AddWithValue("@created_at", If(entry.CreatedAt > DateTime.MinValue, CType(entry.CreatedAt, Object), DBNull.Value))
                 cmd.ExecuteNonQuery()
             End Using
         End Using

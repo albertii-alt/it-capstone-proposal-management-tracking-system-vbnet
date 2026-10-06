@@ -29,6 +29,10 @@ Public Class ProposalService
         End If
 
         Dim proposalId As Integer = ProposalDAL.InsertProposal(proposal, adminActorName)
+        If submittingUser IsNot Nothing AndAlso submittingUser.Role = UserRole.Student Then
+            StudentHistoryService.Record(submittingUser, proposalId, proposal.Title, "Submitted",
+                                          "Proposal submitted for review.", proposal.SubmittedAt)
+        End If
         If submittingUser IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(submittingUser.Role) Then
             AdminActivityLogService.Record(submittingUser, "Created", "Proposal", proposalId, proposal.Title,
                                            "Created the proposal """ & proposal.Title & """.")
@@ -204,12 +208,23 @@ Public Class ProposalService
 
         ProposalDAL.UpdateStatusWithLog(proposalId, newStatus, adminId, cleanRemarks, targetProposal.Title, keywords, targetProposal.Semester, targetProposal.GroupName, targetProposal.YearLevel, targetProposal.SubmittedAt)
         Dim actor As User = UserDAL.GetUserById(adminId)
+        Dim student As User = UserDAL.GetUserById(targetProposal.SubmittedBy)
+        If student IsNot Nothing AndAlso student.Role = UserRole.Student Then
+            Dim historyAction As String = If(newStatus = ProposalStatus.ForRevision, "Requested Revision", "Status changed to " & FormatStatus(newStatus))
+            StudentHistoryService.Record(student, targetProposal.ProposalId, targetProposal.Title, historyAction,
+                                         If(String.IsNullOrWhiteSpace(cleanRemarks), "No remarks provided.", cleanRemarks), DateTime.Now)
+        End If
         Dim actionType As String = If(newStatus = ProposalStatus.Approved, "Approved",
                                       If(newStatus = ProposalStatus.Rejected, "Rejected", "Requested Revision"))
         AdminActivityLogService.Record(actor, actionType, "Proposal", proposalId, targetProposal.Title,
                                        "Changed the proposal """ & targetProposal.Title & """ to " & newStatus.ToString() & ".",
                                        If(String.IsNullOrWhiteSpace(cleanRemarks), Nothing, "Remarks: " & cleanRemarks))
     End Sub
+
+    Private Shared Function FormatStatus(status As ProposalStatus) As String
+        If status = ProposalStatus.ForRevision Then Return "For Revision"
+        Return status.ToString()
+    End Function
 
     Public Shared Function CheckDuplicateForExistingProposal(proposalId As Integer, title As String) As DuplicateCheckResult
         Dim otherTitles As List(Of String) = ProposalDAL.GetAllTitlesExcludingProposal(proposalId)

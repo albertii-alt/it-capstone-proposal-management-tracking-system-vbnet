@@ -116,7 +116,7 @@ Public Class ucAdminActivityLogs
         filterPanel.WrapContents = True
         filterPanel.Padding = New Padding(0, 3, 0, 0)
         ConfigureFilterCombo(cboAction, {"All actions", "Created", "Updated", "Deleted", "Activated", "Deactivated", "Approved", "Rejected", "Requested Revision", "Reset Password"}, 145)
-        ConfigureFilterCombo(cboEntity, {"All areas", "Account", "Proposal", "Title Archive", "Profile"}, 145)
+        ConfigureFilterCombo(cboEntity, {"All areas", "Account", "Proposal", "Student History", "Title Archive", "Profile"}, 145)
         cboAction.SelectedIndex = 0
         cboEntity.SelectedIndex = 0
         txtSearch.Width = 190
