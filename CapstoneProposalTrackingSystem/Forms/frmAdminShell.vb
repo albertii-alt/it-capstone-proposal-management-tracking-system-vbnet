@@ -239,6 +239,29 @@ Public Class frmAdminShell
         SetActiveNavButton(activeButton)
     End Sub
 
+    Private Sub ShowNotifications()
+        Using dialog As New frmNotifications(Session.CurrentUser)
+            AddHandler dialog.NotificationSelected, AddressOf NotificationSelected
+            dialog.ShowDialog(Me)
+        End Using
+        btnNavDashboard.PerformClick()
+    End Sub
+
+    Private Sub NotificationSelected(sender As Object, e As frmNotifications.NotificationSelectedEventArgs)
+        If e.Entry Is Nothing Then Return
+        Select Case e.Entry.TargetModule
+            Case "Manage Proposals"
+                btnNavManageProposals.PerformClick()
+            Case "Student Registrations"
+                btnNavStudentRegistrations.PerformClick()
+            Case "Activity Logs"
+                btnNavActivityLogs.PerformClick()
+            Case Else
+                btnNavDashboard.PerformClick()
+        End Select
+    End Sub
+
+
     Private Function CreatePlaceholderContent(pageName As String) As UserControl
         Dim content As New UserControl()
         Dim message As New Label()
@@ -269,6 +292,7 @@ Public Class frmAdminShell
         AddHandler dashboard.ProfileRequested, AddressOf ucDashboard_ProfileRequested
         AddHandler dashboard.DuplicateReviewRequested, AddressOf ucDashboard_DuplicateReviewRequested
         AddHandler dashboard.ActivityRequested, AddressOf ucDashboard_ActivityRequested
+        AddHandler dashboard.NotificationsRequested, Sub(notificationSender, notificationEvent) ShowNotifications()
         LoadContent(dashboard, btnNavDashboard)
     End Sub
 

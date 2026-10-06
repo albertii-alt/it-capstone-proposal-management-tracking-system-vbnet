@@ -15,6 +15,7 @@ Public Class frmStudentDashboard
     Private ReadOnly lblIdentity As New Label()
     Private ReadOnly picAvatar As New PictureBox()
     Private ReadOnly bell As New Label()
+    Private ReadOnly notificationBadge As New Label()
     Private ReadOnly clockTimer As New Timer With {.Interval = 1000}
     Private ReadOnly sessionTimer As New Timer With {.Interval = 30000}
     Private ReadOnly navButtons As New List(Of Button)()
@@ -37,6 +38,7 @@ Public Class frmStudentDashboard
         clockTimer.Start()
         sessionTimer.Start()
         ShowDashboard()
+        UpdateNotificationBell()
     End Sub
 
     Private Sub BuildStudentShell()
@@ -80,9 +82,9 @@ Public Class frmStudentDashboard
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 104.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 116.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 40.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 56.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 180.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 52.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 60.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 210.0F))
         headerMeta.Padding = New Padding(0, 12, 12, 0)
         headerMeta.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         lblDate.Dock = DockStyle.Fill
@@ -95,9 +97,25 @@ Public Class frmStudentDashboard
         lblTime.Margin = New Padding(0)
         bell.Dock = DockStyle.Fill
         bell.ForeColor = sidebarColor
-        bell.Text = ChrW(&HE7ED)
+        bell.Text = String.Empty
         bell.Font = New Font("Segoe MDL2 Assets", 17.0F)
         bell.TextAlign = ContentAlignment.MiddleCenter
+        bell.Cursor = Cursors.Hand
+        AddHandler bell.Click, AddressOf ShowNotifications
+        AddHandler bell.Paint, AddressOf BellPaint
+        notificationBadge.AutoSize = False
+        notificationBadge.Size = New Size(18, 18)
+        notificationBadge.BackColor = Color.FromArgb(166, 58, 58)
+        notificationBadge.ForeColor = Color.White
+        notificationBadge.Font = New Font("Segoe UI", 7.0F, FontStyle.Bold)
+        notificationBadge.TextAlign = ContentAlignment.MiddleCenter
+        notificationBadge.Location = New Point(30, 6)
+        Using badgePath As New GraphicsPath()
+            badgePath.AddEllipse(0, 0, notificationBadge.Width - 1, notificationBadge.Height - 1)
+            notificationBadge.Region = New Region(badgePath)
+        End Using
+        notificationBadge.Visible = False
+        bell.Controls.Add(notificationBadge)
         picAvatar.Size = New Size(40, 40)
         picAvatar.Anchor = AnchorStyles.None
         picAvatar.Margin = New Padding(0)
@@ -110,6 +128,8 @@ Public Class frmStudentDashboard
         AddHandler picAvatar.Paint, AddressOf AvatarPaint
         lblIdentity.Dock = DockStyle.Fill
         lblIdentity.Margin = New Padding(0)
+        lblIdentity.Padding = New Padding(4, 0, 4, 0)
+        lblIdentity.AutoEllipsis = True
         lblIdentity.Font = New Font("Segoe UI", 9.0F)
         lblIdentity.TextAlign = ContentAlignment.MiddleLeft
         headerMeta.Controls.Add(lblDate, 1, 0)
@@ -388,6 +408,54 @@ Public Class frmStudentDashboard
 
     Private Sub ShowProfile(sender As Object, e As EventArgs)
         ShowView(New ucProfile(), "Profile")
+    End Sub
+
+    Private Sub ShowNotifications(sender As Object, e As EventArgs)
+        Using dialog As New frmNotifications(Session.CurrentUser)
+            AddHandler dialog.NotificationSelected, AddressOf NotificationSelected
+            dialog.ShowDialog(Me)
+        End Using
+        UpdateNotificationBell()
+    End Sub
+
+    Private Sub NotificationSelected(sender As Object, e As frmNotifications.NotificationSelectedEventArgs)
+        If e.Entry Is Nothing Then Return
+        Select Case e.Entry.TargetModule
+            Case "My Proposals"
+                ShowProposals()
+            Case "Profile"
+                ShowView(New ucProfile(), "Profile")
+            Case Else
+                ShowDashboard()
+        End Select
+    End Sub
+
+    Private Sub UpdateNotificationBell()
+        If Session.CurrentUser Is Nothing Then Return
+        Dim unread As Integer = NotificationService.CountUnread(Session.CurrentUser.UserId)
+        notificationBadge.Text = If(unread > 99, "99+", unread.ToString())
+        notificationBadge.Visible = unread > 0
+        notificationBadge.BringToFront()
+    End Sub
+
+    Private Sub BellPaint(sender As Object, e As PaintEventArgs)
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias
+        Dim bellOffsetX As Integer = Math.Max(0, (bell.ClientSize.Width - 40) \ 2)
+        Dim bellOffsetY As Integer = Math.Max(0, (bell.ClientSize.Height - 32) \ 2)
+        e.Graphics.TranslateTransform(bellOffsetX, bellOffsetY)
+        Using bellBrush As New SolidBrush(sidebarColor)
+            Dim bellBody As Point() = {
+                New Point(14, 25), New Point(17, 21), New Point(18, 12),
+                New Point(21, 7), New Point(25, 5), New Point(29, 7),
+                New Point(32, 12), New Point(33, 21), New Point(36, 25)}
+            e.Graphics.FillPolygon(bellBrush, bellBody)
+            e.Graphics.FillEllipse(bellBrush, 22, 25, 6, 4)
+            e.Graphics.FillRectangle(bellBrush, 17, 22, 16, 4)
+        End Using
+        Using clapperBrush As New SolidBrush(activeColor)
+            e.Graphics.FillEllipse(clapperBrush, 24, 26, 3, 2)
+        End Using
+        e.Graphics.ResetTransform()
     End Sub
 
     Private Sub Logout(sender As Object, e As EventArgs)

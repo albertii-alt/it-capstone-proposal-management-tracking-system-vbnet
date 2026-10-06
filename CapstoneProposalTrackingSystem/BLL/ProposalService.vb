@@ -32,6 +32,9 @@ Public Class ProposalService
         If submittingUser IsNot Nothing AndAlso submittingUser.Role = UserRole.Student Then
             StudentHistoryService.Record(submittingUser, proposalId, proposal.Title, "Submitted",
                                           "Proposal submitted for review.", proposal.SubmittedAt)
+            NotificationService.NotifyAdministrators("ProposalSubmitted", "New proposal submitted",
+                                                      submittingUser.FullName & " submitted """ & proposal.Title & """.",
+                                                      proposalId, "Manage Proposals")
         End If
         If submittingUser IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(submittingUser.Role) Then
             AdminActivityLogService.Record(submittingUser, "Created", "Proposal", proposalId, proposal.Title,
@@ -51,6 +54,12 @@ Public Class ProposalService
 
         Dim previousProposal As Proposal = ProposalDAL.GetProposalById(proposal.ProposalId)
         ProposalDAL.UpdateProposal(proposal)
+
+        If actor IsNot Nothing AndAlso actor.Role = UserRole.Student Then
+            NotificationService.NotifyAdministrators("ProposalEdited", "Proposal edited",
+                                                      actor.FullName & " edited """ & proposal.Title & """.",
+                                                      proposal.ProposalId, "Manage Proposals")
+        End If
 
         If actor IsNot Nothing AndAlso UserRoleHelper.IsAdministrator(actor.Role) AndAlso previousProposal IsNot Nothing Then
             Dim changedFields As New List(Of String)
@@ -145,6 +154,11 @@ Public Class ProposalService
                                            "Deleted the proposal """ & proposal.Title & """.")
             SecurityLogService.Record(actor.UserId, actor.Username, "Sensitive Deletion",
                                       "Deleted the proposal """ & proposal.Title & """.")
+            If actor.Role = UserRole.Student Then
+                NotificationService.NotifyAdministrators("ProposalDeleted", "Proposal deleted",
+                                                          actor.FullName & " deleted """ & proposal.Title & """.",
+                                                          proposalId, "Manage Proposals")
+            End If
         End If
         Return deleted
     End Function
@@ -159,7 +173,13 @@ Public Class ProposalService
             Return False
         End If
 
-        Return ProposalDAL.DeleteProposal(proposalId, student.FullName)
+        Dim deleted As Boolean = ProposalDAL.DeleteProposal(proposalId, student.FullName)
+        If deleted Then
+            NotificationService.NotifyAdministrators("ProposalDeleted", "Proposal deleted",
+                                                      student.FullName & " deleted """ & proposal.Title & """.",
+                                                      proposalId, "Manage Proposals")
+        End If
+        Return deleted
     End Function
 
     Public Shared Function GetLatestLog(proposalId As Integer) As StatusLogEntry
@@ -219,6 +239,11 @@ Public Class ProposalService
         AdminActivityLogService.Record(actor, actionType, "Proposal", proposalId, targetProposal.Title,
                                        "Changed the proposal """ & targetProposal.Title & """ to " & newStatus.ToString() & ".",
                                        If(String.IsNullOrWhiteSpace(cleanRemarks), Nothing, "Remarks: " & cleanRemarks))
+        If student IsNot Nothing AndAlso student.Role = UserRole.Student Then
+            NotificationService.NotifyUser(student.UserId, actionType, "Proposal status updated",
+                                            "Your proposal """ & targetProposal.Title & """ was marked " & FormatStatus(newStatus) & ".",
+                                            proposalId, "My Proposals")
+        End If
     End Sub
 
     Private Shared Function FormatStatus(status As ProposalStatus) As String

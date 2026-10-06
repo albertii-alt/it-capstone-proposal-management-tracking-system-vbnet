@@ -13,11 +13,13 @@ Public Class ucDashboard
     Public Event ProfileRequested As EventHandler
     Public Event DuplicateReviewRequested As EventHandler
     Public Event ActivityRequested As EventHandler
+    Public Event NotificationsRequested As EventHandler
 
     Private ReadOnly lblWelcome As New Label()
     Private ReadOnly lblSubheading As New Label()
     Private ReadOnly picAdminProfile As New PictureBox()
     Private ReadOnly lblNotificationBell As New Label()
+    Private ReadOnly lblNotificationBadge As New Label()
     Private ReadOnly lblDashboardDate As New Label()
     Private ReadOnly lblDashboardTime As New Label()
     Private ReadOnly _clockTimer As New Timer()
@@ -107,9 +109,9 @@ Public Class ucDashboard
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 104.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 116.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 40.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 56.0F))
-        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 160.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 52.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 60.0F))
+        headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 210.0F))
         headerMeta.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         picAdminProfile.Name = "picDashboardAdminProfile"
@@ -133,12 +135,27 @@ Public Class ucDashboard
         lblNotificationBell.Margin = New Padding(0)
         lblNotificationBell.ForeColor = Color.FromArgb(122, 31, 46)
         lblNotificationBell.BackColor = Color.Transparent
-        lblNotificationBell.Cursor = Cursors.Default
+        lblNotificationBell.Cursor = Cursors.Hand
         lblNotificationBell.AccessibleName = "Notifications"
         lblNotificationBell.AccessibleDescription = "Notifications will be available here in a future update."
         Dim notificationTip As New ToolTip()
-        notificationTip.SetToolTip(lblNotificationBell, "Notifications (coming soon)")
+        notificationTip.SetToolTip(lblNotificationBell, "Notifications")
+        AddHandler lblNotificationBell.Click, Sub(sender, e) RaiseEvent NotificationsRequested(Me, EventArgs.Empty)
         AddHandler lblNotificationBell.Paint, AddressOf lblNotificationBell_Paint
+        lblNotificationBadge.AutoSize = False
+        lblNotificationBadge.Size = New Size(18, 18)
+        lblNotificationBadge.BackColor = Color.FromArgb(166, 58, 58)
+        lblNotificationBadge.ForeColor = Color.White
+        lblNotificationBadge.Font = New Font("Segoe UI", 7.0F, FontStyle.Bold)
+        lblNotificationBadge.TextAlign = ContentAlignment.MiddleCenter
+        lblNotificationBadge.Location = New Point(30, 6)
+        Using badgePath As New GraphicsPath()
+            badgePath.AddEllipse(0, 0, lblNotificationBadge.Width - 1, lblNotificationBadge.Height - 1)
+            lblNotificationBadge.Region = New Region(badgePath)
+        End Using
+        lblNotificationBadge.Visible = False
+        lblNotificationBadge.BringToFront()
+        lblNotificationBell.Controls.Add(lblNotificationBadge)
 
         adminLabel.Name = "lblDashboardAdmin"
         adminLabel.Dock = DockStyle.Fill
@@ -193,6 +210,7 @@ Public Class ucDashboard
         headerMeta.Controls.Add(identityLayout, 5, 0)
         headerLayout.Controls.Add(headerTextLayout, 0, 0)
         headerLayout.Controls.Add(headerMeta, 1, 0)
+        UpdateNotificationBadge()
         lblPendingCount.Name = "lblPendingCount"
         lblApprovedCount.Name = "lblApprovedCount"
         lblRevisionCount.Name = "lblRevisionCount"
@@ -266,6 +284,14 @@ Public Class ucDashboard
 
         Me.Controls.Add(dashboardLayout)
         Me.ResumeLayout(False)
+    End Sub
+
+    Public Sub UpdateNotificationBadge()
+        If Session.CurrentUser Is Nothing Then Return
+        Dim unread As Integer = NotificationService.CountUnread(Session.CurrentUser.UserId)
+        lblNotificationBadge.Text = If(unread > 99, "99+", unread.ToString())
+        lblNotificationBadge.Visible = unread > 0
+        lblNotificationBadge.BringToFront()
     End Sub
 
     Private Sub LoadDashboardProfilePhoto()

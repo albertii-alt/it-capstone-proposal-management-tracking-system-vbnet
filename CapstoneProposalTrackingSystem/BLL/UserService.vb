@@ -246,7 +246,11 @@ Public Class UserService
         }
 
         Try
-            Return UserDAL.CreateUser(newUser)
+            Dim registeredUserId As Integer = UserDAL.CreateUser(newUser)
+            NotificationService.NotifyAdministrators("StudentRegistration", "New student registration",
+                                                      newUser.FullName & " requested a student account (" & normalizedSchoolId & ").",
+                                                      registeredUserId, "Student Registrations")
+            Return registeredUserId
         Catch ex As MySqlException
             Throw New ApplicationException("Could not submit the registration. Please try again.", ex)
         End Try
@@ -283,6 +287,11 @@ Public Class UserService
                                           "Approved the student registration for " & target.FullName & " (" & target.SchoolId & ").",
                                           "Rejected the student registration for " & target.FullName & " (" & target.SchoolId & ")."),
                                        If(String.IsNullOrWhiteSpace(remarks), Nothing, "Remarks: " & remarks.Trim()))
+        NotificationService.NotifyUser(target.UserId,
+                                       If(approve, "AccountApproved", "AccountRejected"),
+                                       If(approve, "Student account approved", "Student account registration update"),
+                                       If(approve, "Your student account has been approved.", "Your student account registration was rejected."),
+                                       target.UserId, "Profile")
         SecurityLogService.Record(reviewer.UserId, reviewer.Username,
                                   If(approve, "Student Registration Approved", "Student Registration Rejected"),
                                   If(approve, "Approved ", "Rejected ") & target.FullName & "'s registration (" & target.SchoolId & ").")
