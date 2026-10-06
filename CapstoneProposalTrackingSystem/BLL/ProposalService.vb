@@ -145,6 +145,19 @@ Public Class ProposalService
         Return deleted
     End Function
 
+    Public Shared Function DeleteStudentProposal(proposalId As Integer, student As User) As Boolean
+        If student Is Nothing OrElse student.Role <> UserRole.Student Then
+            Throw New UnauthorizedAccessException("Only students can delete student proposals.")
+        End If
+
+        Dim proposal As Proposal = ProposalDAL.GetProposalById(proposalId)
+        If proposal Is Nothing OrElse proposal.SubmittedBy <> student.UserId Then
+            Return False
+        End If
+
+        Return ProposalDAL.DeleteProposal(proposalId, student.FullName)
+    End Function
+
     Public Shared Function GetLatestLog(proposalId As Integer) As StatusLogEntry
         Return StatusLogDAL.GetLatestLogForProposal(proposalId)
     End Function
