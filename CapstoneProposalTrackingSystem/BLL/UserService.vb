@@ -30,7 +30,7 @@ Public Class UserService
         Return user
     End Function
 
-    Public Shared Sub UpdateOwnProfile(userId As Integer, username As String, fullName As String, email As String, profilePhoto As Byte())
+    Public Shared Sub UpdateOwnProfile(userId As Integer, username As String, fullName As String, email As String, schoolId As String, profilePhoto As Byte())
         If userId <= 0 Then
             Throw New ApplicationException("A valid account is required.")
         End If
@@ -62,6 +62,14 @@ Public Class UserService
             Throw New ApplicationException("That account no longer exists.")
         End If
 
+        Dim normalizedSchoolId As String = If(schoolId, "").Trim()
+        If existingUser.Role = UserRole.Student AndAlso Not Regex.IsMatch(normalizedSchoolId, "^[0-9]{2}-[0-9]{6}$") Then
+            Throw New ApplicationException("School ID must use the format 00-000000.")
+        End If
+        If normalizedSchoolId.Length > 30 Then
+            Throw New ApplicationException("School ID exceeds the allowed length.")
+        End If
+
         Dim changedFields As New List(Of String)
         If Not String.Equals(existingUser.Username, username.Trim(), StringComparison.Ordinal) Then
             changedFields.Add("username")
@@ -71,6 +79,9 @@ Public Class UserService
         End If
         If Not String.Equals(existingUser.Email, email.Trim(), StringComparison.OrdinalIgnoreCase) Then
             changedFields.Add("email")
+        End If
+        If Not String.Equals(existingUser.SchoolId, normalizedSchoolId, StringComparison.OrdinalIgnoreCase) Then
+            changedFields.Add("school ID")
         End If
         If Not ProfilePhotosMatch(existingUser.ProfilePhoto, profilePhoto) Then
             changedFields.Add("profile photo")
@@ -82,6 +93,7 @@ Public Class UserService
                 .Username = username.Trim(),
                 .FullName = fullName.Trim(),
                 .Email = email.Trim(),
+                .SchoolId = normalizedSchoolId,
                 .ProfilePhoto = profilePhoto
             })
         Catch ex As MySqlException

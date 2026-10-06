@@ -214,7 +214,7 @@ Public Class UserDAL
         Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
             conn.Open()
 
-            Dim query As String = "UPDATE tbl_users SET username = @username, full_name = @full_name, email = @email, profile_photo = @profile_photo " &
+            Dim query As String = "UPDATE tbl_users SET username = @username, full_name = @full_name, email = @email, school_id = @school_id, profile_photo = @profile_photo " &
                                   "WHERE user_id = @user_id"
 
             Try
@@ -222,6 +222,7 @@ Public Class UserDAL
                     cmd.Parameters.AddWithValue("@username", user.Username)
                     cmd.Parameters.AddWithValue("@full_name", user.FullName)
                     cmd.Parameters.AddWithValue("@email", user.Email)
+                    cmd.Parameters.AddWithValue("@school_id", If(String.IsNullOrWhiteSpace(user.SchoolId), CType(DBNull.Value, Object), user.SchoolId))
                     Dim photoParameter = cmd.Parameters.Add("@profile_photo", MySqlDbType.MediumBlob)
                     photoParameter.Value = If(user.ProfilePhoto Is Nothing, CType(DBNull.Value, Object), user.ProfilePhoto)
                     cmd.Parameters.AddWithValue("@user_id", user.UserId)
@@ -230,7 +231,7 @@ Public Class UserDAL
                     End If
                 End Using
             Catch ex As MySqlException When ex.Number = 1062
-                Throw New ApplicationException("That username or email is already in use.", ex)
+                Throw New ApplicationException("That username, email, or School ID is already in use.", ex)
             End Try
         End Using
     End Sub

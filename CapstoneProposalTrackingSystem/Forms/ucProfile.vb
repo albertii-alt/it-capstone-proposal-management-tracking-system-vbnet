@@ -9,6 +9,7 @@ Public Class ucProfile
     Private ReadOnly txtFullName As New TextBox()
     Private ReadOnly txtUsername As New TextBox()
     Private ReadOnly txtEmail As New TextBox()
+    Private ReadOnly txtSchoolId As New TextBox()
     Private ReadOnly picProfilePhoto As New PictureBox()
     Private ReadOnly lblPhotoPlaceholder As New Label()
     Private ReadOnly lblProfileStatus As New Label()
@@ -51,7 +52,7 @@ Public Class ucProfile
         pageLayout.RowCount = 2
         pageLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         pageLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 100.0F))
-        pageLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 520.0F))
+        pageLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 580.0F))
 
         lblHeader.Dock = DockStyle.Top
         lblHeader.Height = 60
@@ -78,7 +79,7 @@ Public Class ucProfile
         editorLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         profilePanel.Dock = DockStyle.Fill
-        profilePanel.Size = New Size(450, 520)
+        profilePanel.Size = New Size(450, 580)
         profilePanel.BackColor = SystemColors.Window
         profilePanel.Padding = New Padding(20)
         profilePanel.Margin = New Padding(0, 0, 10, 0)
@@ -114,10 +115,12 @@ Public Class ucProfile
         profileFields.Name = "tlpProfileFields"
         profileFields.Location = New Point(20, 198)
         profileFields.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
-        profileFields.Size = New Size(410, 198)
+        profileFields.Size = New Size(410, 242)
         profileFields.ColumnCount = 1
-        profileFields.RowCount = 6
+        profileFields.RowCount = 8
         profileFields.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 22.0F))
+        profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 36.0F))
         profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 22.0F))
         profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 36.0F))
         profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 22.0F))
@@ -127,12 +130,15 @@ Public Class ucProfile
         ConfigureTextBox(txtFullName, "txtFullName", 100)
         ConfigureTextBox(txtUsername, "txtUsername", 50)
         ConfigureTextBox(txtEmail, "txtEmail", 100)
+        ConfigureTextBox(txtSchoolId, "txtSchoolId", 30)
         profileFields.Controls.Add(CreateFieldLabel("Full name"), 0, 0)
         profileFields.Controls.Add(txtFullName, 0, 1)
         profileFields.Controls.Add(CreateFieldLabel("Username"), 0, 2)
         profileFields.Controls.Add(txtUsername, 0, 3)
         profileFields.Controls.Add(CreateFieldLabel("Email"), 0, 4)
         profileFields.Controls.Add(txtEmail, 0, 5)
+        profileFields.Controls.Add(CreateFieldLabel("School ID"), 0, 6)
+        profileFields.Controls.Add(txtSchoolId, 0, 7)
 
         profileFooter.Name = "tlpProfileFooter"
         profileFooter.Dock = DockStyle.Bottom
@@ -162,7 +168,7 @@ Public Class ucProfile
         profilePanel.Controls.Add(profileFooter)
 
         passwordPanel.Dock = DockStyle.Fill
-        passwordPanel.Size = New Size(326, 520)
+        passwordPanel.Size = New Size(326, 580)
         passwordPanel.BackColor = SystemColors.Window
         passwordPanel.Padding = New Padding(20)
         passwordPanel.Margin = New Padding(10, 0, 0, 0)
@@ -265,6 +271,7 @@ Public Class ucProfile
         txtFullName.Text = user.FullName
         txtUsername.Text = user.Username
         txtEmail.Text = user.Email
+        txtSchoolId.Text = user.SchoolId
         _profilePhotoBytes = user.ProfilePhoto
         ShowProfilePhoto(_profilePhotoBytes)
         lblPhotoPlaceholder.Visible = _profilePhotoBytes Is Nothing
@@ -326,12 +333,14 @@ Public Class ucProfile
                 txtUsername.Text,
                 txtFullName.Text,
                 txtEmail.Text,
+                txtSchoolId.Text,
                 _profilePhotoBytes)
 
             LoadUser(UserService.GetOwnProfile(Session.CurrentUser.UserId))
             Session.CurrentUser.Username = txtUsername.Text.Trim()
             Session.CurrentUser.FullName = txtFullName.Text.Trim()
             Session.CurrentUser.Email = txtEmail.Text.Trim()
+            Session.CurrentUser.SchoolId = txtSchoolId.Text.Trim()
             Session.CurrentUser.ProfilePhoto = _profilePhotoBytes
             SetProfileStatus(String.Empty, False)
             ShowSuccessMessage("Profile saved", "Your profile changes have been saved.")
@@ -400,6 +409,10 @@ Public Class ucProfile
 
         If Not String.Equals(txtEmail.Text.Trim(), _originalProfile.Email, StringComparison.Ordinal) Then
             changes.Add("Email: " & _originalProfile.Email & " -> " & txtEmail.Text.Trim())
+        End If
+
+        If Not String.Equals(txtSchoolId.Text.Trim(), If(_originalProfile.SchoolId, ""), StringComparison.Ordinal) Then
+            changes.Add("School ID: " & If(_originalProfile.SchoolId, "") & " -> " & txtSchoolId.Text.Trim())
         End If
 
         If Not PhotosMatch(_profilePhotoBytes, _originalProfile.ProfilePhoto) Then
