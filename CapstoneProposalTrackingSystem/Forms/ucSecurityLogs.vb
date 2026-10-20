@@ -19,6 +19,7 @@ Public Class ucSecurityLogs
     Private ReadOnly lblHeader As New Label()
     Private ReadOnly lblSubtitle As New Label()
     Private ReadOnly cboEvent As New ComboBox()
+    Private ReadOnly cboUserRole As New ComboBox()
     Private ReadOnly txtSearch As New TextBox()
     Private ReadOnly dtpFrom As New DateTimePicker()
     Private ReadOnly dtpTo As New DateTimePicker()
@@ -46,6 +47,7 @@ Public Class ucSecurityLogs
         Dim headerText As New TableLayoutPanel()
         Dim headerActions As New FlowLayoutPanel()
         Dim filters As New FlowLayoutPanel()
+        Dim toolbar As New TableLayoutPanel()
         Dim pagination As New FlowLayoutPanel()
 
         Me.AutoScaleMode = AutoScaleMode.Dpi
@@ -55,18 +57,18 @@ Public Class ucSecurityLogs
         layout.Dock = DockStyle.Fill
         layout.Padding = New Padding(20)
         layout.ColumnCount = 1
-        layout.RowCount = 4
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
+        layout.RowCount = 3
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 110.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
         headerText.Dock = DockStyle.Fill
         headerText.ColumnCount = 1
         headerText.RowCount = 2
-        headerText.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
+        headerText.RowStyles.Add(New RowStyle(SizeType.Absolute, 0.0F))
         headerText.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         lblHeader.Text = "Security Logs"
+        lblHeader.Visible = False
         lblHeader.Dock = DockStyle.Fill
         lblHeader.TextAlign = ContentAlignment.MiddleLeft
         lblHeader.Font = New Font("Segoe UI", 23.0F, FontStyle.Bold)
@@ -80,11 +82,11 @@ Public Class ucSecurityLogs
         headerPanel.Dock = DockStyle.Fill
         headerPanel.Controls.Add(headerText)
 
-        headerActions.Dock = DockStyle.Right
-        headerActions.Width = 390
+        headerActions.Dock = DockStyle.Fill
         headerActions.FlowDirection = FlowDirection.RightToLeft
         headerActions.WrapContents = False
-        headerActions.Padding = New Padding(0, 2, 0, 0)
+        headerActions.Padding = New Padding(0, 6, 0, 0)
+        headerActions.Margin = New Padding(0)
         ConfigureButton(btnRefresh, "Refresh", 90)
         ConfigureButton(btnToggleSelectionMode, "Select", 100)
         btnDeleteSelected.Text = "Delete Selected"
@@ -100,18 +102,19 @@ Public Class ucSecurityLogs
         headerActions.Controls.Add(btnRefresh)
         headerActions.Controls.Add(btnToggleSelectionMode)
         headerActions.Controls.Add(btnDeleteSelected)
-        headerPanel.Controls.Add(headerActions)
 
         filters.Dock = DockStyle.Fill
         filters.FlowDirection = FlowDirection.LeftToRight
         filters.WrapContents = True
-        filters.Padding = New Padding(0, 3, 0, 0)
+        filters.Padding = New Padding(0, 6, 4, 0)
         ConfigureFilterCombo(cboEvent, {"All events", "Successful Login", "Failed Login", "Blocked Login", "Logout",
                                          "Session Created", "Session Revoked", "Session Expired", "Password Changed",
                                          "Password Reset", "Account Created", "Account Activated", "Account Deactivated",
                                          "Account Deleted", "Role Changed", "Profile Security Change",
                                          "Account Security Change", "Sensitive Export"}, 145)
+        ConfigureFilterCombo(cboUserRole, {"All user types", "SuperAdmin", "Admin", "Student"}, 125)
         cboEvent.SelectedIndex = 0
+        cboUserRole.SelectedIndex = 0
         txtSearch.Width = 190
         txtSearch.Margin = New Padding(0, 0, 12, 0)
         txtSearch.PlaceholderText = "Search security logs"
@@ -124,6 +127,8 @@ Public Class ucSecurityLogs
         filters.Controls.AddRange({
             New Label With {.Text = "Event", .AutoSize = True, .Margin = New Padding(0, 6, 5, 0)},
             cboEvent,
+            New Label With {.Text = "User", .AutoSize = True, .Margin = New Padding(0, 6, 5, 0)},
+            cboUserRole,
             New Label With {.Text = "Search", .AutoSize = True, .Margin = New Padding(0, 6, 5, 0)},
             txtSearch,
             New Label With {.Text = "From", .AutoSize = True, .Margin = New Padding(0, 6, 5, 0)},
@@ -164,16 +169,28 @@ Public Class ucSecurityLogs
         Dim footer As New Panel With {.Dock = DockStyle.Fill}
         footer.Controls.Add(pagination)
         footer.Controls.Add(lblSummary)
-        layout.Controls.Add(headerPanel, 0, 0)
-        layout.Controls.Add(filters, 0, 1)
-        layout.Controls.Add(dgvLogs, 0, 2)
-        layout.Controls.Add(footer, 0, 3)
+        toolbar.Name = "tlpSecurityLogsToolbar"
+        toolbar.Dock = DockStyle.Fill
+        toolbar.ColumnCount = 2
+        toolbar.RowCount = 1
+        toolbar.Margin = New Padding(0)
+        toolbar.Padding = New Padding(0)
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 410.0F))
+        toolbar.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        toolbar.Controls.Add(filters, 0, 0)
+        toolbar.Controls.Add(headerActions, 1, 0)
+
+        layout.Controls.Add(toolbar, 0, 0)
+        layout.Controls.Add(dgvLogs, 0, 1)
+        layout.Controls.Add(footer, 0, 2)
         Controls.Add(layout)
 
         AddHandler btnRefresh.Click, Sub() Reload()
         AddHandler btnToggleSelectionMode.Click, AddressOf ToggleSelectionMode
         AddHandler btnDeleteSelected.Click, AddressOf DeleteSelected
         AddHandler cboEvent.SelectedIndexChanged, Sub() Reload()
+        AddHandler cboUserRole.SelectedIndexChanged, Sub() Reload()
         AddHandler dtpFrom.ValueChanged, Sub() Reload()
         AddHandler dtpTo.ValueChanged, Sub() Reload()
         AddHandler txtSearch.KeyDown, AddressOf SearchKeyDown
@@ -253,6 +270,7 @@ Public Class ucSecurityLogs
     Private Sub LoadEntries()
         Dim entries As List(Of SecurityLogEntry) = SecurityLogService.GetEntries(
             If(cboEvent.SelectedIndex <= 0, Nothing, cboEvent.Text),
+            If(cboUserRole.SelectedIndex <= 0, Nothing, cboUserRole.Text),
             txtSearch.Text, dtpFrom.Value.Date, dtpTo.Value.Date.AddDays(1),
             _currentPageIndex, _pageSize, _totalCount)
         dgvLogs.Rows.Clear()

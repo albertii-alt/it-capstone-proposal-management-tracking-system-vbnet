@@ -19,8 +19,11 @@ Public Class SecurityLogService
         SecurityLogDAL.Insert(userId, If(username, ""), eventType, deviceName, ipAddress, details)
     End Sub
 
-    Public Shared Function GetEntries(eventType As String, searchText As String, fromDate As DateTime?, toDate As DateTime?, pageIndex As Integer, pageSize As Integer, ByRef totalCount As Integer) As List(Of SecurityLogEntry)
-        Return SecurityLogDAL.GetEntries(eventType, searchText, fromDate, toDate, pageIndex, pageSize, totalCount)
+    Public Shared Function GetEntries(eventType As String, userRole As String, searchText As String,
+                                      fromDate As DateTime?, toDate As DateTime?, pageIndex As Integer,
+                                      pageSize As Integer, ByRef totalCount As Integer) As List(Of SecurityLogEntry)
+        Return SecurityLogDAL.GetEntries(eventType, userRole, searchText, fromDate, toDate,
+                                         pageIndex, pageSize, totalCount)
     End Function
 
     Public Shared Function DeleteEntries(entries As List(Of SecurityLogEntry)) As Integer

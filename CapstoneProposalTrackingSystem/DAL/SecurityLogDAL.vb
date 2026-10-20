@@ -18,21 +18,26 @@ Public Class SecurityLogDAL
         End Using
     End Sub
 
-    Public Shared Function GetEntries(eventType As String, searchText As String, fromDate As DateTime?, toDate As DateTime?, pageIndex As Integer, pageSize As Integer, ByRef totalCount As Integer) As List(Of SecurityLogEntry)
+    Public Shared Function GetEntries(eventType As String, userRole As String, searchText As String,
+                                      fromDate As DateTime?, toDate As DateTime?, pageIndex As Integer,
+                                      pageSize As Integer, ByRef totalCount As Integer) As List(Of SecurityLogEntry)
         Dim result As New List(Of SecurityLogEntry)
         Dim filters As String = " WHERE 1=1"
-        If Not String.IsNullOrWhiteSpace(eventType) Then filters &= " AND event_type=@event"
-        If Not String.IsNullOrWhiteSpace(searchText) Then filters &= " AND (username_snapshot LIKE @search OR details LIKE @search OR ip_address LIKE @search)"
-        If fromDate.HasValue Then filters &= " AND created_at>=@from_date"
-        If toDate.HasValue Then filters &= " AND created_at<@to_date"
+        If Not String.IsNullOrWhiteSpace(eventType) Then filters &= " AND sl.event_type=@event"
+        If Not String.IsNullOrWhiteSpace(userRole) Then filters &= " AND u.role=@user_role"
+        If Not String.IsNullOrWhiteSpace(searchText) Then filters &= " AND (sl.username_snapshot LIKE @search OR sl.details LIKE @search OR sl.ip_address LIKE @search)"
+        If fromDate.HasValue Then filters &= " AND sl.created_at>=@from_date"
+        If toDate.HasValue Then filters &= " AND sl.created_at<@to_date"
         Using conn = DbConnectionHelper.GetConnection()
             conn.Open()
-            Using countCmd As New MySqlCommand("SELECT COUNT(*) FROM tbl_security_log" & filters, conn)
-                AddParameters(countCmd, eventType, searchText, fromDate, toDate)
+            Dim fromClause As String = " FROM tbl_security_log sl LEFT JOIN tbl_users u ON sl.user_id=u.user_id"
+            Using countCmd As New MySqlCommand("SELECT COUNT(*)" & fromClause & filters, conn)
+                AddParameters(countCmd, eventType, userRole, searchText, fromDate, toDate)
                 totalCount = Convert.ToInt32(countCmd.ExecuteScalar())
             End Using
-            Using cmd As New MySqlCommand("SELECT log_id,username_snapshot,event_type,device_name,ip_address,details,created_at FROM tbl_security_log" & filters & " ORDER BY created_at DESC,log_id DESC LIMIT @offset,@size", conn)
-                AddParameters(cmd, eventType, searchText, fromDate, toDate)
+            Using cmd As New MySqlCommand("SELECT sl.log_id,sl.username_snapshot,sl.event_type,sl.device_name,sl.ip_address,sl.details,sl.created_at" &
+                                          fromClause & filters & " ORDER BY sl.created_at DESC,sl.log_id DESC LIMIT @offset,@size", conn)
+                AddParameters(cmd, eventType, userRole, searchText, fromDate, toDate)
                 cmd.Parameters.AddWithValue("@offset", Math.Max(0, pageIndex) * pageSize)
                 cmd.Parameters.AddWithValue("@size", pageSize)
                 Using reader = cmd.ExecuteReader()
@@ -77,8 +82,10 @@ Public Class SecurityLogDAL
         End Using
     End Function
 
-    Private Shared Sub AddParameters(command As MySqlCommand, eventType As String, searchText As String, fromDate As DateTime?, toDate As DateTime?)
+    Private Shared Sub AddParameters(command As MySqlCommand, eventType As String, userRole As String,
+                                     searchText As String, fromDate As DateTime?, toDate As DateTime?)
         If Not String.IsNullOrWhiteSpace(eventType) Then command.Parameters.AddWithValue("@event", eventType)
+        If Not String.IsNullOrWhiteSpace(userRole) Then command.Parameters.AddWithValue("@user_role", userRole)
         If Not String.IsNullOrWhiteSpace(searchText) Then command.Parameters.AddWithValue("@search", "%" & searchText.Trim() & "%")
         If fromDate.HasValue Then command.Parameters.AddWithValue("@from_date", fromDate.Value)
         If toDate.HasValue Then command.Parameters.AddWithValue("@to_date", toDate.Value)

@@ -18,25 +18,28 @@ Public Class LoginActivityDAL
         End Using
     End Sub
 
-    Public Shared Function GetForUser(userId As Integer, eventType As String, fromDate As DateTime?, toDate As DateTime?,
+    Public Shared Function GetForUser(userId As Integer, eventType As String, fromDate As DateTime?, toDate As DateTime?, searchText As String,
                                       pageIndex As Integer, pageSize As Integer, ByRef totalCount As Integer) As List(Of LoginActivityEntry)
         Dim entries As New List(Of LoginActivityEntry)
         Dim filters As String = " WHERE user_id = @user_id"
         If Not String.IsNullOrWhiteSpace(eventType) Then filters &= " AND event_type = @event_type"
         If fromDate.HasValue Then filters &= " AND created_at >= @from_date"
         If toDate.HasValue Then filters &= " AND created_at < @to_date"
+        If Not String.IsNullOrWhiteSpace(searchText) Then
+            filters &= " AND (event_type LIKE @search_text OR device_name LIKE @search_text OR ip_address LIKE @search_text)"
+        End If
         Using conn As MySqlConnection = DbConnectionHelper.GetConnection()
             conn.Open()
             Using countCmd As New MySqlCommand("SELECT COUNT(*) FROM tbl_login_activity" & filters, conn)
                 countCmd.Parameters.AddWithValue("@user_id", userId)
-                AddFilterParameters(countCmd, eventType, fromDate, toDate)
+                AddFilterParameters(countCmd, eventType, fromDate, toDate, searchText)
                 totalCount = Convert.ToInt32(countCmd.ExecuteScalar())
             End Using
             Using cmd As New MySqlCommand(
                 "SELECT activity_id, event_type, created_at, device_name, ip_address FROM tbl_login_activity " &
                 filters & " ORDER BY created_at DESC, activity_id DESC LIMIT @offset, @page_size", conn)
                 cmd.Parameters.AddWithValue("@user_id", userId)
-                AddFilterParameters(cmd, eventType, fromDate, toDate)
+                AddFilterParameters(cmd, eventType, fromDate, toDate, searchText)
                 cmd.Parameters.AddWithValue("@offset", Math.Max(0, pageIndex) * pageSize)
                 cmd.Parameters.AddWithValue("@page_size", pageSize)
                 Using reader As MySqlDataReader = cmd.ExecuteReader()
@@ -55,10 +58,11 @@ Public Class LoginActivityDAL
         Return entries
     End Function
 
-    Private Shared Sub AddFilterParameters(command As MySqlCommand, eventType As String, fromDate As DateTime?, toDate As DateTime?)
+    Private Shared Sub AddFilterParameters(command As MySqlCommand, eventType As String, fromDate As DateTime?, toDate As DateTime?, searchText As String)
         If Not String.IsNullOrWhiteSpace(eventType) Then command.Parameters.AddWithValue("@event_type", eventType)
         If fromDate.HasValue Then command.Parameters.AddWithValue("@from_date", fromDate.Value)
         If toDate.HasValue Then command.Parameters.AddWithValue("@to_date", toDate.Value)
+        If Not String.IsNullOrWhiteSpace(searchText) Then command.Parameters.AddWithValue("@search_text", "%" & searchText.Trim() & "%")
     End Sub
 
     Public Shared Function DeleteForUser(userId As Integer, activityIds As List(Of Integer)) As Integer

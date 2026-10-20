@@ -17,12 +17,18 @@ Public Class ucStudentRegistrations
     Private ReadOnly btnApproveSelected As New Button()
     Private ReadOnly btnRejectSelected As New Button()
     Private ReadOnly chkSelectAll As New CheckBox()
+    Private ReadOnly txtSearch As New TextBox()
+    Private ReadOnly chkRegisteredFrom As New CheckBox()
+    Private ReadOnly dtpRegisteredFrom As New DateTimePicker()
+    Private ReadOnly chkRegisteredThrough As New CheckBox()
+    Private ReadOnly dtpRegisteredThrough As New DateTimePicker()
     Private ReadOnly selectedUserIds As New HashSet(Of Integer)()
     Private _currentPageIndex As Integer
     Private _pageSize As Integer = 25
     Private _selectionMode As Boolean
     Private _updatingSelection As Boolean
     Private _registrations As New List(Of User)()
+    Private _filteredRegistrations As New List(Of User)()
 
     Public Sub New()
         InitializeLayout()
@@ -34,36 +40,74 @@ Public Class ucStudentRegistrations
         Me.BackColor = SystemColors.Control
         Me.Padding = New Padding(20)
 
-        Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 1, .RowCount = 4, .Padding = New Padding(20)}
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 56.0F))
+        Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 1, .RowCount = 3, .Padding = New Padding(20)}
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 76.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
-        Dim header As New Panel With {.Dock = DockStyle.Fill}
-        Dim title As New Label With {.Text = "Student Registrations", .Font = New Font("Segoe UI", 23.0F, FontStyle.Bold), .ForeColor = Color.FromArgb(45, 45, 45), .Dock = DockStyle.Top, .Height = 48}
-        Dim subtitle As New Label With {.Text = "Review student accounts before granting access to the system.", .Font = New Font("Segoe UI", 9.0F), .ForeColor = Color.DimGray, .Dock = DockStyle.Bottom, .Height = 26}
-        header.Controls.Add(subtitle)
-        header.Controls.Add(title)
+        Dim toolbar As New TableLayoutPanel With {
+            .Dock = DockStyle.Fill,
+            .ColumnCount = 2,
+            .RowCount = 1,
+            .Margin = New Padding(0),
+            .Padding = New Padding(0)
+        }
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 540.0F))
+        toolbar.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
-        Dim toolbar As New Panel With {.Dock = DockStyle.Fill}
-        Dim refreshButton As New Button With {.Text = "Refresh", .Size = New Size(100, 28), .Anchor = AnchorStyles.Top Or AnchorStyles.Right}
-        refreshButton.Location = New Point(toolbar.ClientSize.Width - refreshButton.Width, 4)
-        AddHandler toolbar.Resize, Sub(sender, e) refreshButton.Left = toolbar.ClientSize.Width - refreshButton.Width
+        Dim filterPanel As New FlowLayoutPanel With {
+            .Dock = DockStyle.Fill,
+            .FlowDirection = FlowDirection.LeftToRight,
+            .WrapContents = True,
+            .Padding = New Padding(0, 6, 4, 0),
+            .Margin = New Padding(0)
+        }
+        Dim toolbarActions As New FlowLayoutPanel With {
+            .Dock = DockStyle.Fill,
+            .FlowDirection = FlowDirection.RightToLeft,
+            .WrapContents = False,
+            .Padding = New Padding(0, 6, 0, 0),
+            .Margin = New Padding(0)
+        }
+        Dim refreshButton As New Button With {.Text = "Refresh", .Size = New Size(100, 28), .Margin = New Padding(8, 0, 0, 0)}
         AddHandler refreshButton.Click, Sub(sender, e) LoadRegistrations()
-        toolbar.Controls.Add(refreshButton)
+
+        txtSearch.Name = "txtRegistrationSearch"
+        txtSearch.Width = 225
+        txtSearch.Height = 28
+        txtSearch.Margin = New Padding(0, 0, 12, 0)
+        txtSearch.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular)
+        txtSearch.PlaceholderText = "Search ID, name, email, username"
+
+        ConfigureDateFilterCheckBox(chkRegisteredFrom, "chkRegisteredFrom", "From")
+        ConfigureDateFilter(dtpRegisteredFrom, "dtpRegisteredFrom")
+        dtpRegisteredFrom.Margin = New Padding(0, 0, 10, 0)
+
+        ConfigureDateFilterCheckBox(chkRegisteredThrough, "chkRegisteredThrough", "Through")
+        ConfigureDateFilter(dtpRegisteredThrough, "dtpRegisteredThrough")
+
+        filterPanel.Controls.AddRange({txtSearch, chkRegisteredFrom, dtpRegisteredFrom, chkRegisteredThrough, dtpRegisteredThrough})
+        AddHandler txtSearch.TextChanged, AddressOf RegistrationFilter_Changed
+        AddHandler chkRegisteredFrom.CheckedChanged, AddressOf RegisteredFrom_Changed
+        AddHandler dtpRegisteredFrom.ValueChanged, AddressOf RegistrationFilter_Changed
+        AddHandler chkRegisteredThrough.CheckedChanged, AddressOf RegisteredThrough_Changed
+        AddHandler dtpRegisteredThrough.ValueChanged, AddressOf RegistrationFilter_Changed
+
         ConfigureSelectionButton(btnToggleSelection, "Select")
         ConfigureSelectionButton(btnApproveSelected, "Approve Selected")
         ConfigureSelectionButton(btnRejectSelected, "Reject Selected")
-        btnToggleSelection.Location = New Point(0, 4)
-        btnApproveSelected.Location = New Point(108, 4)
-        btnRejectSelected.Location = New Point(238, 4)
+        btnToggleSelection.Margin = New Padding(8, 0, 0, 0)
+        btnApproveSelected.Margin = New Padding(8, 0, 0, 0)
+        btnRejectSelected.Margin = New Padding(8, 0, 0, 0)
         btnApproveSelected.Visible = False
         btnRejectSelected.Visible = False
         AddHandler btnToggleSelection.Click, AddressOf ToggleSelection_Click
         AddHandler btnApproveSelected.Click, Sub(sender, e) ReviewSelected(True)
         AddHandler btnRejectSelected.Click, Sub(sender, e) ReviewSelected(False)
-        toolbar.Controls.AddRange({btnRejectSelected, btnApproveSelected, btnToggleSelection})
+        toolbarActions.Controls.AddRange({refreshButton, btnToggleSelection, btnApproveSelected, btnRejectSelected})
+        toolbar.Controls.Add(filterPanel, 0, 0)
+        toolbar.Controls.Add(toolbarActions, 1, 0)
 
         ConfigureGrid()
         pnlGridHost.Dock = DockStyle.Fill
@@ -72,10 +116,9 @@ Public Class ucStudentRegistrations
         ConfigureEmptyState()
         pnlGridHost.Controls.Add(lblEmptyState)
         ConfigurePagination()
-        layout.Controls.Add(header, 0, 0)
-        layout.Controls.Add(toolbar, 0, 1)
-        layout.Controls.Add(pnlGridHost, 0, 2)
-        layout.Controls.Add(pnlPagination, 0, 3)
+        layout.Controls.Add(toolbar, 0, 0)
+        layout.Controls.Add(pnlGridHost, 0, 1)
+        layout.Controls.Add(pnlPagination, 0, 2)
         Me.Controls.Add(layout)
     End Sub
 
@@ -141,6 +184,25 @@ Public Class ucStudentRegistrations
         button.UseVisualStyleBackColor = True
     End Sub
 
+    Private Shared Sub ConfigureDateFilterCheckBox(dateFilterCheckBox As CheckBox, controlName As String, label As String)
+        dateFilterCheckBox.Name = controlName
+        dateFilterCheckBox.Text = label
+        dateFilterCheckBox.AutoSize = True
+        dateFilterCheckBox.Height = 28
+        dateFilterCheckBox.Margin = New Padding(0, 0, 4, 0)
+        dateFilterCheckBox.TextAlign = ContentAlignment.MiddleLeft
+    End Sub
+
+    Private Shared Sub ConfigureDateFilter(dateFilter As DateTimePicker, controlName As String)
+        dateFilter.Name = controlName
+        dateFilter.Format = DateTimePickerFormat.Custom
+        dateFilter.CustomFormat = "MMM d, yyyy"
+        dateFilter.Width = 128
+        dateFilter.Height = 28
+        dateFilter.Enabled = False
+        dateFilter.Margin = New Padding(0, 0, 10, 0)
+    End Sub
+
     Private Sub ConfigurePagination()
         pnlPagination.Dock = DockStyle.Fill
         lblPaginationSummary.Dock = DockStyle.Left
@@ -185,16 +247,63 @@ Public Class ucStudentRegistrations
         Try
             _registrations = UserService.GetPendingStudentRegistrations()
             selectedUserIds.RemoveWhere(Function(id) Not _registrations.Any(Function(registration) registration.UserId = id))
-            _currentPageIndex = Math.Min(_currentPageIndex, Math.Max(0, TotalPages() - 1))
-            RenderCurrentPage()
+            ApplyRegistrationFilters()
         Catch ex As ApplicationException
             MessageBox.Show(ex.Message, "Student Registrations", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
 
+    Private Sub ApplyRegistrationFilters()
+        Dim registrationsToShow As IEnumerable(Of User) = _registrations
+        Dim searchText As String = txtSearch.Text.Trim()
+        If searchText.Length > 0 Then
+            registrationsToShow = registrationsToShow.Where(
+                Function(registration) ContainsIgnoreCase(registration.SchoolId, searchText) OrElse
+                                       ContainsIgnoreCase(registration.FullName, searchText) OrElse
+                                       ContainsIgnoreCase(registration.Email, searchText) OrElse
+                                       ContainsIgnoreCase(registration.Username, searchText))
+        End If
+
+        If chkRegisteredFrom.Checked Then
+            Dim registeredFrom As DateTime = dtpRegisteredFrom.Value.Date
+            registrationsToShow = registrationsToShow.Where(
+                Function(registration) registration.RegisteredAt.HasValue AndAlso
+                                       registration.RegisteredAt.Value >= registeredFrom)
+        End If
+
+        If chkRegisteredThrough.Checked Then
+            Dim registeredBefore As DateTime = dtpRegisteredThrough.Value.Date.AddDays(1)
+            registrationsToShow = registrationsToShow.Where(
+                Function(registration) registration.RegisteredAt.HasValue AndAlso
+                                       registration.RegisteredAt.Value < registeredBefore)
+        End If
+
+        _filteredRegistrations = registrationsToShow.ToList()
+        _currentPageIndex = Math.Min(_currentPageIndex, Math.Max(0, TotalPages() - 1))
+        RenderCurrentPage()
+    End Sub
+
+    Private Shared Function ContainsIgnoreCase(value As String, searchText As String) As Boolean
+        Return If(value, String.Empty).IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0
+    End Function
+
+    Private Sub RegistrationFilter_Changed(sender As Object, e As EventArgs)
+        ApplyRegistrationFilters()
+    End Sub
+
+    Private Sub RegisteredFrom_Changed(sender As Object, e As EventArgs)
+        dtpRegisteredFrom.Enabled = chkRegisteredFrom.Checked
+        ApplyRegistrationFilters()
+    End Sub
+
+    Private Sub RegisteredThrough_Changed(sender As Object, e As EventArgs)
+        dtpRegisteredThrough.Enabled = chkRegisteredThrough.Checked
+        ApplyRegistrationFilters()
+    End Sub
+
     Private Sub RenderCurrentPage()
         dgvRegistrations.Rows.Clear()
-        Dim pageItems = _registrations.Skip(_currentPageIndex * _pageSize).Take(_pageSize).ToList()
+        Dim pageItems = _filteredRegistrations.Skip(_currentPageIndex * _pageSize).Take(_pageSize).ToList()
         For Each registration As User In pageItems
                 Dim rowIndex As Integer = dgvRegistrations.Rows.Add(
                     selectedUserIds.Contains(registration.UserId),
@@ -207,22 +316,29 @@ Public Class ucStudentRegistrations
                     "Reject")
                 dgvRegistrations.Rows(rowIndex).Tag = registration.UserId
         Next
-        lblEmptyState.Visible = _registrations.Count = 0
-        dgvRegistrations.Visible = _registrations.Count > 0
+        lblEmptyState.Visible = _filteredRegistrations.Count = 0
+        dgvRegistrations.Visible = _filteredRegistrations.Count > 0
+        If _registrations.Count > 0 AndAlso _filteredRegistrations.Count = 0 Then
+            lblEmptyState.Text = "No registrations match the current filters." & Environment.NewLine &
+                                 "Adjust or clear the search and date filters."
+        Else
+            lblEmptyState.Text = "No pending student registrations." & Environment.NewLine &
+                                 "New registration requests will appear here for review."
+        End If
         Dim totalPageCount As Integer = TotalPages()
         Dim firstRecord As Integer = 0
-        If _registrations.Count > 0 Then firstRecord = (_currentPageIndex * _pageSize) + 1
-        Dim lastRecord As Integer = Math.Min((_currentPageIndex + 1) * _pageSize, _registrations.Count)
+        If _filteredRegistrations.Count > 0 Then firstRecord = (_currentPageIndex * _pageSize) + 1
+        Dim lastRecord As Integer = Math.Min((_currentPageIndex + 1) * _pageSize, _filteredRegistrations.Count)
         lblPaginationSummary.Text = "Showing " & firstRecord.ToString() &
                                     "-" & lastRecord.ToString() &
-                                    " of " & _registrations.Count.ToString() & " registrations"
+                                    " of " & _filteredRegistrations.Count.ToString() & " registrations"
         lblPageIndicator.Text = "Page " & (_currentPageIndex + 1).ToString() & " of " & totalPageCount.ToString()
         btnPreviousPage.Enabled = _currentPageIndex > 0
         btnNextPage.Enabled = _currentPageIndex < totalPageCount - 1
         btnApproveSelected.Enabled = selectedUserIds.Count > 0
         btnRejectSelected.Enabled = selectedUserIds.Count > 0
         If _selectionMode Then
-            Dim currentPageItems = _registrations.Skip(_currentPageIndex * _pageSize).Take(_pageSize).ToList()
+            Dim currentPageItems = _filteredRegistrations.Skip(_currentPageIndex * _pageSize).Take(_pageSize).ToList()
             _updatingSelection = True
             chkSelectAll.Checked = currentPageItems.Count > 0 AndAlso currentPageItems.All(Function(item) selectedUserIds.Contains(item.UserId))
             _updatingSelection = False
@@ -231,7 +347,7 @@ Public Class ucStudentRegistrations
     End Sub
 
     Private Function TotalPages() As Integer
-        Return Math.Max(1, CInt(Math.Ceiling(_registrations.Count / CDbl(_pageSize))))
+        Return Math.Max(1, CInt(Math.Ceiling(_filteredRegistrations.Count / CDbl(_pageSize))))
     End Function
 
     Private Sub ChangePage(offset As Integer)
@@ -271,7 +387,7 @@ Public Class ucStudentRegistrations
 
     Private Sub SelectAll_CheckedChanged(sender As Object, e As EventArgs)
         If _updatingSelection Then Return
-        Dim pageItems = _registrations.Skip(_currentPageIndex * _pageSize).Take(_pageSize)
+        Dim pageItems = _filteredRegistrations.Skip(_currentPageIndex * _pageSize).Take(_pageSize)
         For Each registration As User In pageItems
             If chkSelectAll.Checked Then selectedUserIds.Add(registration.UserId) Else selectedUserIds.Remove(registration.UserId)
         Next

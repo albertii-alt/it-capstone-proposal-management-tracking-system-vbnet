@@ -58,6 +58,8 @@ Public Class ucManageProposals
         Dim headerPanel As New Panel()
         Dim headerTextLayout As New TableLayoutPanel()
         Dim headerActions As New FlowLayoutPanel()
+        Dim filterToolbarLayout As New TableLayoutPanel()
+        Dim filterAndActionsLayout As New TableLayoutPanel()
 
         Me.SuspendLayout()
         Me.AutoScaleMode = AutoScaleMode.Dpi
@@ -68,15 +70,15 @@ Public Class ucManageProposals
         layout.Dock = DockStyle.Fill
         layout.Padding = New Padding(20)
         layout.ColumnCount = 1
-        layout.RowCount = 4
+        layout.RowCount = 3
         layout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
         lblHeader.Name = "lblHeader"
         lblHeader.Text = "Manage Proposals"
+        lblHeader.Visible = False
         lblHeader.Dock = DockStyle.Fill
         lblHeader.TextAlign = ContentAlignment.MiddleLeft
         lblHeader.Font = New Font("Segoe UI", 23.0F, FontStyle.Bold)
@@ -93,7 +95,7 @@ Public Class ucManageProposals
         headerTextLayout.ColumnCount = 1
         headerTextLayout.RowCount = 2
         headerTextLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
+        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 0.0F))
         headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         headerTextLayout.Controls.Add(lblHeader, 0, 0)
         headerTextLayout.Controls.Add(lblHeaderSubtitle, 0, 1)
@@ -102,11 +104,10 @@ Public Class ucManageProposals
         headerPanel.Dock = DockStyle.Fill
 
         headerActions.Name = "flpManageProposalHeaderActions"
-        headerActions.Dock = DockStyle.Right
-        headerActions.Width = 280
+        headerActions.Dock = DockStyle.Fill
         headerActions.FlowDirection = FlowDirection.RightToLeft
         headerActions.WrapContents = False
-        headerActions.Padding = New Padding(0, 2, 0, 0)
+        headerActions.Padding = New Padding(0, 6, 0, 0)
 
         btnRefresh.Name = "btnRefresh"
         btnRefresh.Text = "Refresh"
@@ -122,16 +123,23 @@ Public Class ucManageProposals
         btnSubmitProposal.BackColor = Color.FromArgb(246, 201, 69)
         btnSubmitProposal.ForeColor = Color.FromArgb(122, 31, 46)
         btnSubmitProposal.UseVisualStyleBackColor = False
+        btnSubmitProposal.Margin = New Padding(8, 0, 0, 0)
 
         headerActions.Controls.Add(btnRefresh)
         headerActions.Controls.Add(btnSubmitProposal)
-        headerPanel.Controls.Add(headerTextLayout)
-        headerPanel.Controls.Add(headerActions)
 
         pnlFilterToolbar.Name = "pnlFilterToolbar"
-        pnlFilterToolbar.Dock = DockStyle.Top
+        pnlFilterToolbar.Dock = DockStyle.Fill
         pnlFilterToolbar.Height = 80
         pnlFilterToolbar.BackColor = SystemColors.Control
+        filterToolbarLayout.Dock = DockStyle.Fill
+        filterToolbarLayout.ColumnCount = 1
+        filterToolbarLayout.RowCount = 2
+        filterToolbarLayout.Margin = New Padding(0)
+        filterToolbarLayout.Padding = New Padding(0)
+        filterToolbarLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        filterToolbarLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 36.0F))
+        filterToolbarLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
         flpStatusPills.Name = "flpStatusPills"
         flpStatusPills.Dock = DockStyle.Top
@@ -153,29 +161,40 @@ Public Class ucManageProposals
         flpStatusPills.Controls.Add(btnFilterRejected)
 
         flpFilterDropdowns.Name = "flpFilterDropdowns"
-        flpFilterDropdowns.Dock = DockStyle.Top
-        flpFilterDropdowns.Height = 36
+        flpFilterDropdowns.Dock = DockStyle.Fill
+        flpFilterDropdowns.Height = 44
         flpFilterDropdowns.FlowDirection = FlowDirection.LeftToRight
         flpFilterDropdowns.WrapContents = False
-        flpFilterDropdowns.Padding = New Padding(0, 3, 0, 0)
+        flpFilterDropdowns.Padding = New Padding(0, 6, 4, 0)
 
-        ConfigureFilterComboBox(cboYearLevelFilter, "cboYearLevelFilter", 150)
+        ConfigureFilterComboBox(cboYearLevelFilter, "cboYearLevelFilter", 120)
         cboYearLevelFilter.Items.AddRange({"All Year Levels", "1st Year", "2nd Year", "3rd Year", "4th Year"})
         cboYearLevelFilter.SelectedIndex = 0
 
-        ConfigureFilterComboBox(cboSemesterFilter, "cboSemesterFilter", 150)
+        ConfigureFilterComboBox(cboSemesterFilter, "cboSemesterFilter", 120)
         cboSemesterFilter.Items.AddRange({"All Semesters", "1st Semester", "2nd Semester"})
         cboSemesterFilter.SelectedIndex = 0
 
-        ConfigureFilterComboBox(cboSortBy, "cboSortBy", 160)
+        ConfigureFilterComboBox(cboSortBy, "cboSortBy", 130)
         cboSortBy.Items.AddRange({"Newest First", "Oldest First", "Title (A-Z)", "Title (Z-A)"})
         cboSortBy.SelectedIndex = 0
 
         flpFilterDropdowns.Controls.Add(cboYearLevelFilter)
         flpFilterDropdowns.Controls.Add(cboSemesterFilter)
         flpFilterDropdowns.Controls.Add(cboSortBy)
-        pnlFilterToolbar.Controls.Add(flpFilterDropdowns)
-        pnlFilterToolbar.Controls.Add(flpStatusPills)
+        filterToolbarLayout.Controls.Add(flpStatusPills, 0, 0)
+        filterAndActionsLayout.Dock = DockStyle.Fill
+        filterAndActionsLayout.ColumnCount = 2
+        filterAndActionsLayout.RowCount = 1
+        filterAndActionsLayout.Margin = New Padding(0)
+        filterAndActionsLayout.Padding = New Padding(0)
+        filterAndActionsLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        filterAndActionsLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 266.0F))
+        filterAndActionsLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        filterAndActionsLayout.Controls.Add(flpFilterDropdowns, 0, 0)
+        filterAndActionsLayout.Controls.Add(headerActions, 1, 0)
+        filterToolbarLayout.Controls.Add(filterAndActionsLayout, 0, 1)
+        pnlFilterToolbar.Controls.Add(filterToolbarLayout)
 
         dgvProposals.Name = "dgvProposals"
         dgvProposals.Dock = DockStyle.Fill
@@ -243,10 +262,9 @@ Public Class ucManageProposals
         pnlPagination.Controls.Add(flpPaginationControls)
         pnlPagination.Controls.Add(lblPaginationSummary)
 
-        layout.Controls.Add(headerPanel, 0, 0)
-        layout.Controls.Add(pnlFilterToolbar, 0, 1)
-        layout.Controls.Add(dgvProposals, 0, 2)
-        layout.Controls.Add(pnlPagination, 0, 3)
+        layout.Controls.Add(pnlFilterToolbar, 0, 0)
+        layout.Controls.Add(dgvProposals, 0, 1)
+        layout.Controls.Add(pnlPagination, 0, 2)
 
         Me.Controls.Add(layout)
         Me.ResumeLayout(False)

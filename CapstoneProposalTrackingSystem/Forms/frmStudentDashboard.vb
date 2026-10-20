@@ -12,6 +12,8 @@ Public Class frmStudentDashboard
     Private ReadOnly headerMeta As New TableLayoutPanel()
     Private ReadOnly lblDate As New Label()
     Private ReadOnly lblTime As New Label()
+    Private ReadOnly lblPageTitle As New Label()
+    Private ReadOnly lblPageSubtitle As New Label()
     Private ReadOnly lblIdentity As New Label()
     Private ReadOnly picAvatar As New PictureBox()
     Private ReadOnly bell As New Label()
@@ -77,7 +79,7 @@ Public Class frmStudentDashboard
         pnlSidebar.Controls.Add(spacer)
 
         headerMeta.Dock = DockStyle.Top
-        headerMeta.Height = 84
+        headerMeta.Height = 96
         headerMeta.ColumnCount = 6
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 104.0F))
@@ -87,6 +89,25 @@ Public Class frmStudentDashboard
         headerMeta.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 210.0F))
         headerMeta.Padding = New Padding(0, 12, 12, 0)
         headerMeta.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        Dim pageHeading As New TableLayoutPanel With {
+            .Dock = DockStyle.Fill,
+            .ColumnCount = 1,
+            .RowCount = 2,
+            .Padding = New Padding(20, 4, 8, 4)
+        }
+        pageHeading.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        pageHeading.RowStyles.Add(New RowStyle(SizeType.Absolute, 42.0F))
+        pageHeading.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        lblPageTitle.Dock = DockStyle.Fill
+        lblPageTitle.Font = New Font("Segoe UI", 22.0F, FontStyle.Bold)
+        lblPageTitle.ForeColor = Color.FromArgb(45, 45, 45)
+        lblPageTitle.TextAlign = ContentAlignment.MiddleLeft
+        lblPageSubtitle.Dock = DockStyle.Fill
+        lblPageSubtitle.Font = New Font("Segoe UI", 9.0F)
+        lblPageSubtitle.ForeColor = Color.DimGray
+        lblPageSubtitle.TextAlign = ContentAlignment.MiddleLeft
+        pageHeading.Controls.Add(lblPageTitle, 0, 0)
+        pageHeading.Controls.Add(lblPageSubtitle, 0, 1)
         lblDate.Dock = DockStyle.Fill
         lblDate.TextAlign = ContentAlignment.MiddleCenter
         lblDate.ForeColor = Color.FromArgb(70, 70, 70)
@@ -132,6 +153,7 @@ Public Class frmStudentDashboard
         lblIdentity.AutoEllipsis = True
         lblIdentity.Font = New Font("Segoe UI", 9.0F)
         lblIdentity.TextAlign = ContentAlignment.MiddleLeft
+        headerMeta.Controls.Add(pageHeading, 0, 0)
         headerMeta.Controls.Add(lblDate, 1, 0)
         headerMeta.Controls.Add(lblTime, 2, 0)
         headerMeta.Controls.Add(bell, 3, 0)
@@ -218,6 +240,7 @@ Public Class frmStudentDashboard
     End Sub
 
     Private Sub ShowView(control As UserControl, activeText As String)
+        SetPageHeader(activeText)
         For Each button As Button In navButtons
             Dim selected As Boolean = button.Text.Trim() = activeText
             button.BackColor = If(selected, activeColor, sidebarColor)
@@ -233,20 +256,33 @@ Public Class frmStudentDashboard
         pnlViewHost.Controls.Add(control)
     End Sub
 
+    Private Sub SetPageHeader(activeText As String)
+        lblPageTitle.Text = activeText
+        Select Case activeText
+            Case "Dashboard"
+                lblPageSubtitle.Text = "Welcome back, " & Session.CurrentUser.FullName & ". Here's an overview of your capstone proposals."
+            Case "My Proposals"
+                lblPageSubtitle.Text = "Submit proposals and track their review status."
+            Case "History"
+                lblPageSubtitle.Text = "Review the activity and review history for your proposals."
+            Case "My Login Activity"
+                lblPageSubtitle.Text = "Review your successful sign-in and sign-out history."
+            Case "Profile"
+                lblPageSubtitle.Text = "Manage your account details and sign-in password."
+            Case Else
+                lblPageSubtitle.Text = String.Empty
+        End Select
+    End Sub
+
     Private Sub ShowDashboard(sender As Object, e As EventArgs)
         ShowDashboard()
     End Sub
 
     Private Sub ShowDashboard()
         Dim dashboard As New UserControl With {.BackColor = SystemColors.Control}
-        Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .Padding = New Padding(20), .ColumnCount = 1, .RowCount = 3}
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 92.0F))
+        Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .Padding = New Padding(20), .ColumnCount = 1, .RowCount = 2}
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 104.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
-        Dim header As New Panel With {.Dock = DockStyle.Fill}
-        header.Controls.Add(New Label With {.Text = "Dashboard", .Dock = DockStyle.Top, .Height = 58, .Font = New Font("Segoe UI", 23.0F, FontStyle.Bold), .ForeColor = Color.FromArgb(45, 45, 45), .Padding = New Padding(0, 4, 0, 0)})
-        header.Controls.Add(New Label With {.Text = "Welcome back, " & Session.CurrentUser.FullName & ". Here's an overview of your capstone proposals.", .Dock = DockStyle.Bottom, .Height = 26, .ForeColor = Color.DimGray})
-        layout.Controls.Add(header, 0, 0)
 
         Dim counts As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 5}
         For index As Integer = 0 To 4
@@ -258,7 +294,7 @@ Public Class frmStudentDashboard
         AddMetric(counts, "Approved", proposals.Where(Function(item) item.Status = ProposalStatus.Approved).Count(), 2)
         AddMetric(counts, "For Revision", proposals.Where(Function(item) item.Status = ProposalStatus.ForRevision).Count(), 3)
         AddMetric(counts, "Rejected", proposals.Where(Function(item) item.Status = ProposalStatus.Rejected).Count(), 4)
-        layout.Controls.Add(counts, 0, 1)
+        layout.Controls.Add(counts, 0, 0)
 
         Dim content As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 2, .RowCount = 1}
         content.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 58.0F))
@@ -277,7 +313,7 @@ Public Class frmStudentDashboard
         rightColumn.Controls.Add(CreateProfileCompletionCard(), 0, 2)
         content.Controls.Add(leftColumn, 0, 0)
         content.Controls.Add(rightColumn, 1, 0)
-        layout.Controls.Add(content, 0, 2)
+        layout.Controls.Add(content, 0, 1)
         dashboard.Controls.Add(layout)
         ShowView(dashboard, "Dashboard")
     End Sub

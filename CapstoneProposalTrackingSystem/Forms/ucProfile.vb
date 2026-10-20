@@ -2,6 +2,7 @@ Option Strict On
 Option Explicit On
 
 Imports System.IO
+Imports System.Drawing.Drawing2D
 
 Public Class ucProfile
     Inherits UserControl
@@ -14,6 +15,9 @@ Public Class ucProfile
     Private ReadOnly lblPhotoPlaceholder As New Label()
     Private ReadOnly lblProfileStatus As New Label()
     Private ReadOnly lblPasswordStatus As New Label()
+    Private ReadOnly txtCurrentPassword As New TextBox()
+    Private ReadOnly txtNewPassword As New TextBox()
+    Private ReadOnly txtConfirmPassword As New TextBox()
     Private _profilePhotoBytes As Byte()
     Private _originalProfile As User
 
@@ -23,15 +27,14 @@ Public Class ucProfile
 
     Private Sub InitializeComponent()
         Dim pageLayout As New TableLayoutPanel()
-        Dim headerPanel As New Panel()
-        Dim lblHeader As New Label()
-        Dim lblSubtitle As New Label()
         Dim editorLayout As New TableLayoutPanel()
-        Dim profilePanel As New Panel()
-        Dim passwordPanel As New Panel()
+        Dim profilePanel As New TableLayoutPanel()
+        Dim passwordPanel As New TableLayoutPanel()
         Dim profileHeader As Label = CreateSectionHeader("Profile details")
         Dim passwordHeader As Label = CreateSectionHeader("Change password")
         Dim photoPanel As New Panel()
+        Dim photoLayout As New TableLayoutPanel()
+        Dim photoActions As New FlowLayoutPanel()
         Dim btnChoosePhoto As Button = CreateButton("Choose photo")
         Dim btnRemovePhoto As Button = CreateButton("Remove")
         Dim profileFields As New TableLayoutPanel()
@@ -39,6 +42,9 @@ Public Class ucProfile
         Dim btnSaveProfile As Button = CreatePrimaryButton("Save profile")
         Dim btnChangePassword As Button = CreatePrimaryButton("Change password")
         Dim lblPasswordHint As New Label()
+        Dim passwordContent As New TableLayoutPanel()
+        Dim passwordFields As New TableLayoutPanel()
+        Dim passwordStatusPanel As New Panel()
 
         Me.SuspendLayout()
         Me.AutoScaleMode = AutoScaleMode.Dpi
@@ -47,102 +53,117 @@ Public Class ucProfile
 
         pageLayout.Dock = DockStyle.Fill
         pageLayout.AutoScroll = True
-        pageLayout.Padding = New Padding(22)
+        pageLayout.Padding = New Padding(20)
         pageLayout.ColumnCount = 1
-        pageLayout.RowCount = 2
+        pageLayout.RowCount = 1
         pageLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        pageLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 100.0F))
-        pageLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 580.0F))
-
-        lblHeader.Dock = DockStyle.Top
-        lblHeader.Height = 60
-        lblHeader.Text = "Profile"
-        lblHeader.Font = New Font("Segoe UI", 23.0F, FontStyle.Bold)
-        lblHeader.ForeColor = Color.FromArgb(45, 45, 45)
-        lblHeader.TextAlign = ContentAlignment.MiddleLeft
-
-        lblSubtitle.Dock = DockStyle.Fill
-        lblSubtitle.Text = "Manage your account details and sign-in password."
-        lblSubtitle.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular)
-        lblSubtitle.ForeColor = Color.DimGray
-        lblSubtitle.TextAlign = ContentAlignment.MiddleLeft
-
-        headerPanel.Dock = DockStyle.Fill
-        headerPanel.Controls.Add(lblSubtitle)
-        headerPanel.Controls.Add(lblHeader)
+        pageLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         editorLayout.Dock = DockStyle.Fill
         editorLayout.ColumnCount = 2
         editorLayout.RowCount = 1
-        editorLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 58.0F))
-        editorLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 42.0F))
+        editorLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 60.0F))
+        editorLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 40.0F))
         editorLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         profilePanel.Dock = DockStyle.Fill
-        profilePanel.Size = New Size(450, 580)
+        profilePanel.ColumnCount = 1
+        profilePanel.RowCount = 4
         profilePanel.BackColor = SystemColors.Window
         profilePanel.Padding = New Padding(20)
-        profilePanel.Margin = New Padding(0, 0, 10, 0)
-        profilePanel.Controls.Add(profileHeader)
+        profilePanel.Margin = New Padding(0, 0, 8, 0)
+        profilePanel.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        profilePanel.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        profilePanel.RowStyles.Add(New RowStyle(SizeType.Absolute, 228.0F))
+        profilePanel.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        profilePanel.RowStyles.Add(New RowStyle(SizeType.Absolute, 82.0F))
+        profileHeader.Dock = DockStyle.Fill
+        profilePanel.Controls.Add(profileHeader, 0, 0)
 
-        photoPanel.Size = New Size(116, 116)
-        photoPanel.Location = New Point(20, 64)
+        photoPanel.Dock = DockStyle.Fill
+        photoPanel.BackColor = Color.FromArgb(250, 248, 245)
 
         picProfilePhoto.Name = "picProfilePhoto"
-        picProfilePhoto.Size = New Size(104, 104)
-        picProfilePhoto.Location = New Point(0, 0)
+        picProfilePhoto.Size = New Size(160, 160)
+        picProfilePhoto.Margin = New Padding(0)
         picProfilePhoto.SizeMode = PictureBoxSizeMode.Zoom
         picProfilePhoto.BackColor = Color.FromArgb(244, 239, 231)
 
-        lblPhotoPlaceholder.Dock = DockStyle.Fill
+        lblPhotoPlaceholder.Size = picProfilePhoto.Size
         lblPhotoPlaceholder.Text = "PHOTO"
         lblPhotoPlaceholder.TextAlign = ContentAlignment.MiddleCenter
-        lblPhotoPlaceholder.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        lblPhotoPlaceholder.Font = New Font("Segoe UI", 11.0F, FontStyle.Bold)
         lblPhotoPlaceholder.ForeColor = Color.FromArgb(122, 31, 46)
         lblPhotoPlaceholder.BackColor = Color.FromArgb(244, 239, 231)
 
         photoPanel.Controls.Add(picProfilePhoto)
         photoPanel.Controls.Add(lblPhotoPlaceholder)
+        AddHandler photoPanel.Resize, Sub(sender, e) CenterProfilePhoto(photoPanel)
+        AddHandler picProfilePhoto.SizeChanged, Sub(sender, e) ApplyCircularPhotoRegion(picProfilePhoto)
+        AddHandler lblPhotoPlaceholder.SizeChanged, Sub(sender, e) ApplyCircularPhotoRegion(lblPhotoPlaceholder)
+        CenterProfilePhoto(photoPanel)
 
-        btnChoosePhoto.Location = New Point(146, 76)
-        btnChoosePhoto.Size = New Size(122, 32)
+        photoActions.Dock = DockStyle.None
+        photoActions.FlowDirection = FlowDirection.LeftToRight
+        photoActions.WrapContents = False
+        photoActions.Anchor = AnchorStyles.None
+        photoActions.AutoSize = True
+        photoActions.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        btnChoosePhoto.Size = New Size(150, 34)
+        btnChoosePhoto.Margin = New Padding(0, 0, 10, 0)
+        btnChoosePhoto.BackColor = Color.FromArgb(122, 31, 46)
+        btnChoosePhoto.ForeColor = Color.White
+        btnChoosePhoto.FlatAppearance.BorderSize = 0
+        btnChoosePhoto.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        btnChoosePhoto.Cursor = Cursors.Hand
         AddHandler btnChoosePhoto.Click, AddressOf btnChoosePhoto_Click
 
-        btnRemovePhoto.Location = New Point(146, 116)
-        btnRemovePhoto.Size = New Size(92, 30)
+        btnRemovePhoto.Text = "Remove photo"
+        btnRemovePhoto.Size = New Size(130, 34)
+        btnRemovePhoto.Margin = New Padding(0)
+        btnRemovePhoto.BackColor = Color.White
+        btnRemovePhoto.ForeColor = Color.FromArgb(166, 58, 58)
+        btnRemovePhoto.FlatAppearance.BorderColor = Color.FromArgb(166, 58, 58)
+        btnRemovePhoto.FlatAppearance.BorderSize = 1
+        btnRemovePhoto.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        btnRemovePhoto.Cursor = Cursors.Hand
         AddHandler btnRemovePhoto.Click, AddressOf btnRemovePhoto_Click
+        photoActions.Controls.Add(btnChoosePhoto)
+        photoActions.Controls.Add(btnRemovePhoto)
+
+        photoLayout.Dock = DockStyle.Fill
+        photoLayout.ColumnCount = 1
+        photoLayout.RowCount = 2
+        photoLayout.Padding = New Padding(0, 4, 0, 4)
+        photoLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        photoLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        photoLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 42.0F))
+        photoLayout.Controls.Add(photoPanel, 0, 0)
+        photoLayout.Controls.Add(photoActions, 0, 1)
+        profilePanel.Controls.Add(photoLayout, 0, 1)
 
         profileFields.Name = "tlpProfileFields"
-        profileFields.Location = New Point(20, 198)
-        profileFields.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
-        profileFields.Size = New Size(410, 242)
+        profileFields.Dock = DockStyle.Fill
         profileFields.ColumnCount = 1
-        profileFields.RowCount = 8
+        profileFields.RowCount = 4
         profileFields.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 22.0F))
-        profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 36.0F))
-        profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 22.0F))
-        profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 36.0F))
-        profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 22.0F))
-        profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 36.0F))
-        profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 22.0F))
-        profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 36.0F))
+        For index As Integer = 0 To 3
+            profileFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 78.0F))
+        Next
         ConfigureTextBox(txtFullName, "txtFullName", 100)
         ConfigureTextBox(txtUsername, "txtUsername", 50)
         ConfigureTextBox(txtEmail, "txtEmail", 100)
         ConfigureTextBox(txtSchoolId, "txtSchoolId", 30)
-        profileFields.Controls.Add(CreateFieldLabel("Full name"), 0, 0)
-        profileFields.Controls.Add(txtFullName, 0, 1)
-        profileFields.Controls.Add(CreateFieldLabel("Username"), 0, 2)
-        profileFields.Controls.Add(txtUsername, 0, 3)
-        profileFields.Controls.Add(CreateFieldLabel("Email"), 0, 4)
-        profileFields.Controls.Add(txtEmail, 0, 5)
-        profileFields.Controls.Add(CreateFieldLabel("School ID"), 0, 6)
-        profileFields.Controls.Add(txtSchoolId, 0, 7)
+        profileFields.Controls.Add(CreateProfileField("Full name", txtFullName), 0, 0)
+        profileFields.Controls.Add(CreateProfileField("Username", txtUsername), 0, 1)
+        profileFields.Controls.Add(CreateProfileField("Email", txtEmail), 0, 2)
+        profileFields.Controls.Add(CreateProfileField("School ID", txtSchoolId), 0, 3)
+        profileFields.AutoSize = True
+        profileFields.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        profilePanel.Controls.Add(profileFields, 0, 2)
 
         profileFooter.Name = "tlpProfileFooter"
-        profileFooter.Dock = DockStyle.Bottom
-        profileFooter.Height = 82
+        profileFooter.Dock = DockStyle.Fill
         profileFooter.ColumnCount = 1
         profileFooter.RowCount = 2
         profileFooter.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
@@ -160,59 +181,163 @@ Public Class ucProfile
         lblProfileStatus.AutoEllipsis = True
         lblProfileStatus.ForeColor = Color.DimGray
         profileFooter.Controls.Add(lblProfileStatus, 0, 1)
-
-        profilePanel.Controls.Add(photoPanel)
-        profilePanel.Controls.Add(btnChoosePhoto)
-        profilePanel.Controls.Add(btnRemovePhoto)
-        profilePanel.Controls.Add(profileFields)
-        profilePanel.Controls.Add(profileFooter)
+        profilePanel.Controls.Add(profileFooter, 0, 3)
 
         passwordPanel.Dock = DockStyle.Fill
-        passwordPanel.Size = New Size(326, 580)
+        passwordPanel.ColumnCount = 1
+        passwordPanel.RowCount = 3
         passwordPanel.BackColor = SystemColors.Window
         passwordPanel.Padding = New Padding(20)
-        passwordPanel.Margin = New Padding(10, 0, 0, 0)
-        passwordPanel.Controls.Add(passwordHeader)
+        passwordPanel.Margin = New Padding(8, 0, 0, 0)
+        passwordPanel.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        passwordPanel.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        passwordPanel.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        passwordPanel.RowStyles.Add(New RowStyle(SizeType.Absolute, 74.0F))
+        passwordHeader.Dock = DockStyle.Fill
+        passwordPanel.Controls.Add(passwordHeader, 0, 0)
 
-        lblPasswordHint.Location = New Point(20, 66)
-        lblPasswordHint.Size = New Size(286, 42)
-        lblPasswordHint.Text = "Enter your current password to confirm the change."
+        passwordContent.Dock = DockStyle.Fill
+        passwordContent.ColumnCount = 1
+        passwordContent.RowCount = 4
+        passwordContent.Padding = New Padding(0, 12, 0, 0)
+        passwordContent.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        passwordContent.RowStyles.Add(New RowStyle(SizeType.Absolute, 48.0F))
+        passwordContent.RowStyles.Add(New RowStyle(SizeType.Absolute, 200.0F))
+        passwordContent.RowStyles.Add(New RowStyle(SizeType.Absolute, 48.0F))
+        passwordContent.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        lblPasswordHint.Dock = DockStyle.Fill
+        lblPasswordHint.Text = "Confirm your current password, then choose a new password."
         lblPasswordHint.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular)
         lblPasswordHint.ForeColor = Color.DimGray
+        lblPasswordHint.TextAlign = ContentAlignment.TopLeft
 
-        btnChangePassword.Location = New Point(20, 126)
-        btnChangePassword.Size = New Size(160, 36)
+        passwordFields.Dock = DockStyle.Top
+        passwordFields.ColumnCount = 1
+        passwordFields.RowCount = 6
+        passwordFields.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        passwordFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 24.0F))
+        passwordFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        passwordFields.Height = 186
+        passwordFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 24.0F))
+        passwordFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        passwordFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 24.0F))
+        passwordFields.RowStyles.Add(New RowStyle(SizeType.Absolute, 38.0F))
+        ConfigurePasswordTextBox(txtCurrentPassword, "txtCurrentPassword")
+        ConfigurePasswordTextBox(txtNewPassword, "txtNewPassword")
+        ConfigurePasswordTextBox(txtConfirmPassword, "txtConfirmPassword")
+        passwordFields.Controls.Add(CreateFieldLabel("Current password"), 0, 0)
+        passwordFields.Controls.Add(txtCurrentPassword, 0, 1)
+        passwordFields.Controls.Add(CreateFieldLabel("New password"), 0, 2)
+        passwordFields.Controls.Add(txtNewPassword, 0, 3)
+        passwordFields.Controls.Add(CreateFieldLabel("Confirm new password"), 0, 4)
+        passwordFields.Controls.Add(txtConfirmPassword, 0, 5)
+
+        btnChangePassword.Anchor = AnchorStyles.Left
+        btnChangePassword.Size = New Size(175, 38)
+        passwordContent.Controls.Add(lblPasswordHint, 0, 0)
+        passwordContent.Controls.Add(passwordFields, 0, 1)
+        passwordContent.Controls.Add(btnChangePassword, 0, 2)
         AddHandler btnChangePassword.Click, AddressOf btnChangePassword_Click
 
         lblPasswordStatus.Name = "lblPasswordStatus"
         lblPasswordStatus.AutoSize = False
-        lblPasswordStatus.Location = New Point(20, 174)
-        lblPasswordStatus.Anchor = AnchorStyles.Top Or AnchorStyles.Left Or AnchorStyles.Right
-        lblPasswordStatus.Size = New Size(286, 48)
+        lblPasswordStatus.Dock = DockStyle.Fill
         lblPasswordStatus.ForeColor = Color.DimGray
+        lblPasswordStatus.TextAlign = ContentAlignment.MiddleLeft
 
-        passwordPanel.Controls.Add(lblPasswordHint)
-        passwordPanel.Controls.Add(btnChangePassword)
-        passwordPanel.Controls.Add(lblPasswordStatus)
+        passwordStatusPanel.Dock = DockStyle.Fill
+        passwordStatusPanel.Controls.Add(lblPasswordStatus)
+        passwordPanel.Controls.Add(passwordContent, 0, 1)
+        passwordPanel.Controls.Add(passwordStatusPanel, 0, 2)
 
         editorLayout.Controls.Add(profilePanel, 0, 0)
         editorLayout.Controls.Add(passwordPanel, 1, 0)
-        pageLayout.Controls.Add(headerPanel, 0, 0)
-        pageLayout.Controls.Add(editorLayout, 0, 1)
+        pageLayout.Controls.Add(editorLayout, 0, 0)
         Me.Controls.Add(pageLayout)
 
+        AddHandler editorLayout.Resize, Sub(sender, e) UpdateResponsiveLayout(editorLayout)
+        AddHandler Me.Resize, Sub(sender, e) UpdateResponsiveLayout(editorLayout)
         AddHandler btnSaveProfile.Click, AddressOf btnSaveProfile_Click
         AddHandler MyBase.Load, AddressOf ucProfile_Load
+        UpdateResponsiveLayout(editorLayout)
         Me.ResumeLayout(False)
+    End Sub
+
+    Private Shared Function CreateProfileField(labelText As String, textBox As TextBox) As TableLayoutPanel
+        Dim field As New TableLayoutPanel With {
+            .Dock = DockStyle.Fill,
+            .ColumnCount = 1,
+            .RowCount = 2,
+            .Margin = New Padding(0, 3, 0, 7)
+        }
+        field.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        field.RowStyles.Add(New RowStyle(SizeType.Absolute, 24.0F))
+        field.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        field.Controls.Add(CreateFieldLabel(labelText), 0, 0)
+        field.Controls.Add(textBox, 0, 1)
+        Return field
+    End Function
+
+    Private Sub CenterProfilePhoto(photoPanel As Panel)
+        picProfilePhoto.Location = New Point(
+            Math.Max(0, (photoPanel.ClientSize.Width - picProfilePhoto.Width) \ 2),
+            Math.Max(0, (photoPanel.ClientSize.Height - picProfilePhoto.Height) \ 2))
+        lblPhotoPlaceholder.Location = picProfilePhoto.Location
+        ApplyCircularPhotoRegion(picProfilePhoto)
+        ApplyCircularPhotoRegion(lblPhotoPlaceholder)
+    End Sub
+
+    Private Shared Sub ApplyCircularPhotoRegion(control As Control)
+        If control.Width <= 0 OrElse control.Height <= 0 Then Return
+        Dim previousRegion As Region = control.Region
+        Using path As New GraphicsPath()
+            path.AddEllipse(0, 0, control.Width - 1, control.Height - 1)
+            control.Region = New Region(path)
+        End Using
+        If previousRegion IsNot Nothing Then previousRegion.Dispose()
+    End Sub
+
+    Private Shared Sub UpdateResponsiveLayout(editorLayout As TableLayoutPanel)
+        If editorLayout.ClientSize.Width < 720 Then
+            If editorLayout.ColumnCount = 1 Then Return
+            editorLayout.ColumnCount = 1
+            editorLayout.RowCount = 2
+            editorLayout.ColumnStyles.Clear()
+            editorLayout.RowStyles.Clear()
+            editorLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+            editorLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 700.0F))
+            editorLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 360.0F))
+            editorLayout.Height = 1060
+            editorLayout.Dock = DockStyle.Top
+            editorLayout.Controls(0).Margin = New Padding(0, 0, 0, 8)
+            editorLayout.Controls(1).Margin = New Padding(0, 8, 0, 0)
+            editorLayout.SetCellPosition(editorLayout.Controls(0), New TableLayoutPanelCellPosition(0, 0))
+            editorLayout.SetCellPosition(editorLayout.Controls(1), New TableLayoutPanelCellPosition(0, 1))
+        Else
+            If editorLayout.ColumnCount = 2 Then Return
+            editorLayout.Dock = DockStyle.Fill
+            editorLayout.Height = 0
+            editorLayout.ColumnCount = 2
+            editorLayout.RowCount = 1
+            editorLayout.ColumnStyles.Clear()
+            editorLayout.RowStyles.Clear()
+            editorLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 60.0F))
+            editorLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 40.0F))
+            editorLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+            editorLayout.Controls(0).Margin = New Padding(0, 0, 8, 0)
+            editorLayout.Controls(1).Margin = New Padding(8, 0, 0, 0)
+            editorLayout.SetCellPosition(editorLayout.Controls(0), New TableLayoutPanelCellPosition(0, 0))
+            editorLayout.SetCellPosition(editorLayout.Controls(1), New TableLayoutPanelCellPosition(1, 0))
+        End If
     End Sub
 
     Private Shared Function CreateSectionHeader(text As String) As Label
         Return New Label With {
-            .AutoSize = True,
+            .AutoSize = False,
             .Text = text,
             .Font = New Font("Segoe UI", 13.0F, FontStyle.Bold),
             .ForeColor = Color.FromArgb(45, 45, 45),
-            .Location = New Point(20, 18)
+            .TextAlign = ContentAlignment.MiddleLeft
         }
     End Function
 
@@ -251,6 +376,15 @@ Public Class ucProfile
         textBox.BorderStyle = BorderStyle.FixedSingle
         textBox.Margin = New Padding(0, 2, 0, 5)
         textBox.MaxLength = maxLength
+    End Sub
+
+    Private Shared Sub ConfigurePasswordTextBox(textBox As TextBox, controlName As String)
+        textBox.Name = controlName
+        textBox.Dock = DockStyle.Fill
+        textBox.BorderStyle = BorderStyle.FixedSingle
+        textBox.Margin = New Padding(0, 2, 0, 5)
+        textBox.UseSystemPasswordChar = True
+        textBox.MaxLength = 256
     End Sub
 
     Private Sub ucProfile_Load(sender As Object, e As EventArgs)
@@ -352,12 +486,27 @@ Public Class ucProfile
     Private Sub btnChangePassword_Click(sender As Object, e As EventArgs)
         If Session.CurrentUser Is Nothing Then Return
 
-        Using passwordDialog As New frmChangePassword(Session.CurrentUser.UserId)
-            If passwordDialog.ShowDialog(Me.FindForm()) = DialogResult.OK Then
-                SetPasswordStatus(String.Empty, False)
-                ShowSuccessMessage("Password changed", "Your password has been changed successfully.")
-            End If
-        End Using
+        If txtNewPassword.Text <> txtConfirmPassword.Text Then
+            SetPasswordStatus("The new password and confirmation do not match.", True)
+            txtConfirmPassword.Focus()
+            Return
+        End If
+
+        Try
+            UserService.ChangeOwnPassword(Session.CurrentUser.UserId, txtCurrentPassword.Text, txtNewPassword.Text)
+            txtCurrentPassword.Clear()
+            txtNewPassword.Clear()
+            txtConfirmPassword.Clear()
+            SetPasswordStatus("Your password has been changed successfully.", False)
+        Catch ex As ApplicationException
+            SetPasswordStatus(ex.Message, True)
+            txtCurrentPassword.Clear()
+            txtCurrentPassword.Focus()
+        Catch ex As Exception
+            SetPasswordStatus("Could not update your password. Please try again.", True)
+            txtCurrentPassword.Clear()
+            txtCurrentPassword.Focus()
+        End Try
     End Sub
 
     Private Sub ShowProfilePhoto(photoBytes As Byte())

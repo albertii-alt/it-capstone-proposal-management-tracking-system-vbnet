@@ -30,9 +30,9 @@ Public Class LoginActivityService
         LoginActivityDAL.Insert(user, eventType, deviceName, ipAddress)
     End Sub
 
-    Public Shared Function GetForUser(userId As Integer, eventType As String, fromDate As DateTime?, toDate As DateTime?,
+    Public Shared Function GetForUser(userId As Integer, eventType As String, fromDate As DateTime?, toDate As DateTime?, searchText As String,
                                       pageIndex As Integer, pageSize As Integer, ByRef totalCount As Integer) As List(Of LoginActivityEntry)
-        Return LoginActivityDAL.GetForUser(userId, eventType, fromDate, toDate, pageIndex, pageSize, totalCount)
+        Return LoginActivityDAL.GetForUser(userId, eventType, fromDate, toDate, searchText, pageIndex, pageSize, totalCount)
     End Function
 
     Public Shared Function DeleteForUser(userId As Integer, entries As List(Of LoginActivityEntry)) As Integer

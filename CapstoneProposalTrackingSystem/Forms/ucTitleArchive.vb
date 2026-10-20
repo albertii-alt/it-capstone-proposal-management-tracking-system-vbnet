@@ -48,6 +48,7 @@ Public Class ucTitleArchive
         Dim headerTextLayout As New TableLayoutPanel()
         Dim filterPanel As New FlowLayoutPanel()
         Dim headerActions As New FlowLayoutPanel()
+        Dim toolbar As New TableLayoutPanel()
         Dim paginationControls As New FlowLayoutPanel()
 
         Me.SuspendLayout()
@@ -59,15 +60,15 @@ Public Class ucTitleArchive
         layout.Dock = DockStyle.Fill
         layout.Padding = New Padding(20)
         layout.ColumnCount = 1
-        layout.RowCount = 4
+        layout.RowCount = 3
         layout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
         lblHeader.Name = "lblHeader"
         lblHeader.Text = "Title Archive"
+        lblHeader.Visible = False
         lblHeader.Dock = DockStyle.Fill
         lblHeader.TextAlign = ContentAlignment.MiddleLeft
         lblHeader.Font = New Font("Segoe UI", 23.0F, FontStyle.Bold)
@@ -84,7 +85,7 @@ Public Class ucTitleArchive
         headerTextLayout.ColumnCount = 1
         headerTextLayout.RowCount = 2
         headerTextLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
+        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 0.0F))
         headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         headerTextLayout.Controls.Add(lblHeader, 0, 0)
         headerTextLayout.Controls.Add(lblHeaderSubtitle, 0, 1)
@@ -93,24 +94,36 @@ Public Class ucTitleArchive
         headerPanel.Dock = DockStyle.Fill
 
         headerActions.Name = "flpTitleArchiveHeaderActions"
-        headerActions.Dock = DockStyle.Right
-        headerActions.Width = 390
+        headerActions.Dock = DockStyle.Fill
         headerActions.FlowDirection = FlowDirection.RightToLeft
         headerActions.WrapContents = False
-        headerActions.Padding = New Padding(0, 2, 0, 0)
+        headerActions.Padding = New Padding(0, 6, 0, 0)
 
         btnRefresh.Name = "btnRefresh"
         btnRefresh.Text = "Refresh"
         btnRefresh.Size = New Size(100, 28)
         btnRefresh.Margin = New Padding(8, 0, 0, 0)
-        btnRefresh.UseVisualStyleBackColor = True
+        btnRefresh.FlatStyle = FlatStyle.Flat
+        btnRefresh.FlatAppearance.BorderSize = 0
+        btnRefresh.BackColor = Color.FromArgb(122, 31, 46)
+        btnRefresh.ForeColor = Color.White
+        btnRefresh.UseVisualStyleBackColor = False
+        btnRefresh.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        btnRefresh.Cursor = Cursors.Hand
         headerActions.Controls.Add(btnRefresh)
 
         btnToggleSelectionMode.Name = "btnToggleSelectionMode"
         btnToggleSelectionMode.Text = "Select"
-        btnToggleSelectionMode.Size = New Size(100, 28)
+        btnToggleSelectionMode.Size = New Size(126, 28)
         btnToggleSelectionMode.Margin = New Padding(8, 0, 0, 0)
-        btnToggleSelectionMode.UseVisualStyleBackColor = True
+        btnToggleSelectionMode.FlatStyle = FlatStyle.Flat
+        btnToggleSelectionMode.FlatAppearance.BorderSize = 0
+        btnToggleSelectionMode.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 216, 105)
+        btnToggleSelectionMode.BackColor = Color.FromArgb(246, 201, 69)
+        btnToggleSelectionMode.ForeColor = Color.FromArgb(122, 31, 46)
+        btnToggleSelectionMode.UseVisualStyleBackColor = False
+        btnToggleSelectionMode.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        btnToggleSelectionMode.Cursor = Cursors.Hand
         headerActions.Controls.Add(btnToggleSelectionMode)
 
         btnDeleteSelected.Name = "btnDeleteSelected"
@@ -122,18 +135,20 @@ Public Class ucTitleArchive
         btnDeleteSelected.BackColor = Color.FromArgb(166, 58, 58)
         btnDeleteSelected.ForeColor = Color.White
         btnDeleteSelected.UseVisualStyleBackColor = False
+        btnDeleteSelected.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        btnDeleteSelected.Cursor = Cursors.Hand
         btnDeleteSelected.Enabled = False
         btnDeleteSelected.Visible = False
         headerActions.Controls.Add(btnDeleteSelected)
 
         headerPanel.Controls.Add(headerTextLayout)
-        headerPanel.Controls.Add(headerActions)
 
         filterPanel.Name = "flpArchiveFilters"
         filterPanel.Dock = DockStyle.Fill
         filterPanel.FlowDirection = FlowDirection.LeftToRight
         filterPanel.WrapContents = True
-        filterPanel.Padding = New Padding(0, 8, 0, 0)
+        filterPanel.Padding = New Padding(0, 6, 4, 0)
+        filterPanel.WrapContents = True
 
         cboYearLevelFilter.Name = "cboYearLevelFilter"
         cboYearLevelFilter.DropDownStyle = ComboBoxStyle.DropDownList
@@ -239,10 +254,19 @@ Public Class ucTitleArchive
         pnlPagination.Controls.Add(paginationControls)
         pnlPagination.Controls.Add(lblPaginationSummary)
 
-        layout.Controls.Add(headerPanel, 0, 0)
-        layout.Controls.Add(filterPanel, 0, 1)
-        layout.Controls.Add(dgvArchive, 0, 2)
-        layout.Controls.Add(pnlPagination, 0, 3)
+        toolbar.Dock = DockStyle.Fill
+        toolbar.ColumnCount = 2
+        toolbar.RowCount = 1
+        toolbar.Margin = New Padding(0)
+        toolbar.Padding = New Padding(0)
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 400.0F))
+        toolbar.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        toolbar.Controls.Add(filterPanel, 0, 0)
+        toolbar.Controls.Add(headerActions, 1, 0)
+        layout.Controls.Add(toolbar, 0, 0)
+        layout.Controls.Add(dgvArchive, 0, 1)
+        layout.Controls.Add(pnlPagination, 0, 2)
 
         Me.Controls.Add(layout)
         Me.ResumeLayout(False)

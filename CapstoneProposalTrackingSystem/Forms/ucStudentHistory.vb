@@ -10,14 +10,20 @@ Public Class ucStudentHistory
     Private ReadOnly pageSummary As New Label()
     Private ReadOnly pageIndicator As New Label()
     Private ReadOnly pageSizeSelector As New ComboBox()
+    Private ReadOnly actionFilter As New ComboBox()
+    Private ReadOnly searchFilter As New TextBox()
+    Private ReadOnly fromFilter As New DateTimePicker()
+    Private ReadOnly toFilter As New DateTimePicker()
     Private ReadOnly previousPage As New Button()
     Private ReadOnly nextPage As New Button()
     Private ReadOnly selectButton As New Button()
     Private ReadOnly deleteSelectedButton As New Button()
+    Private ReadOnly refreshButton As New Button()
     Private ReadOnly selectAllCheckBox As New CheckBox()
     Private ReadOnly selectedColumn As New DataGridViewCheckBoxColumn()
     Private selectionMode As Boolean
     Private updatingSelection As Boolean
+    Private updatingFilters As Boolean
     Private pageIndex As Integer
     Private pageSize As Integer = 25
 
@@ -44,32 +50,81 @@ Public Class ucStudentHistory
 
     Private Sub BuildLayout()
         Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .Padding = New Padding(20), .ColumnCount = 1, .RowCount = 3}
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 112.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 94.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
-        Dim header As New Panel With {.Dock = DockStyle.Fill}
-        header.Controls.Add(New Label With {.Text = "History", .Dock = DockStyle.Top, .Height = 66, .Font = New Font("Segoe UI", 23.0F, FontStyle.Bold), .ForeColor = Color.FromArgb(45, 45, 45), .Padding = New Padding(0, 5, 0, 0)})
-        header.Controls.Add(New Label With {.Text = "Review the activity and review history for your proposals.", .Dock = DockStyle.Bottom, .Height = 26, .ForeColor = Color.DimGray})
-        ConfigureButton(selectButton, "Select", 100)
+        Dim actions As New FlowLayoutPanel()
+        Dim filters As New FlowLayoutPanel()
+        ConfigureButton(selectButton, "Select", 126)
         ConfigureButton(deleteSelectedButton, "Delete Selected", 160)
+        ConfigureButton(refreshButton, "Refresh", 90)
+        selectButton.BackColor = Color.FromArgb(246, 201, 69)
+        selectButton.ForeColor = Color.FromArgb(122, 31, 46)
+        selectButton.UseVisualStyleBackColor = False
+        selectButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 216, 105)
+        refreshButton.BackColor = Color.FromArgb(122, 31, 46)
+        refreshButton.ForeColor = Color.White
+        refreshButton.UseVisualStyleBackColor = False
+        refreshButton.Margin = New Padding(8, 0, 0, 0)
+        refreshButton.FlatAppearance.MouseOverBackColor = Color.FromArgb(148, 44, 62)
         deleteSelectedButton.BackColor = Color.FromArgb(166, 58, 58)
         deleteSelectedButton.ForeColor = Color.White
         deleteSelectedButton.UseVisualStyleBackColor = False
         deleteSelectedButton.Visible = False
         deleteSelectedButton.Enabled = False
-        Dim actions As New FlowLayoutPanel With {
-            .Dock = DockStyle.Right,
-            .Width = 280,
-            .FlowDirection = FlowDirection.RightToLeft,
-            .WrapContents = False,
-            .Padding = New Padding(0, 10, 0, 0)
-        }
+        deleteSelectedButton.Margin = New Padding(0, 0, 8, 0)
+        deleteSelectedButton.BackColor = Color.FromArgb(166, 58, 58)
+        deleteSelectedButton.ForeColor = Color.White
+        deleteSelectedButton.UseVisualStyleBackColor = False
+
+        actionFilter.DropDownStyle = ComboBoxStyle.DropDownList
+        actionFilter.Width = 150
+        actionFilter.Items.Add("All Activities")
+        actionFilter.SelectedIndex = 0
+        actionFilter.Margin = New Padding(0, 0, 10, 0)
+        searchFilter.Width = 190
+        searchFilter.PlaceholderText = "Search history"
+        searchFilter.Margin = New Padding(0, 0, 12, 0)
+        ConfigureDateFilter(fromFilter)
+        ConfigureDateFilter(toFilter)
+        filters.Controls.Add(actionFilter)
+        filters.Controls.Add(searchFilter)
+        filters.Controls.Add(New Label With {.Text = "From", .AutoSize = True, .Margin = New Padding(0, 6, 5, 0)})
+        filters.Controls.Add(fromFilter)
+        filters.Controls.Add(New Label With {.Text = "To", .AutoSize = True, .Margin = New Padding(8, 6, 5, 0)})
+        filters.Controls.Add(toFilter)
+
         AddHandler selectButton.Click, AddressOf ToggleSelection
         AddHandler deleteSelectedButton.Click, AddressOf DeleteSelected
+        AddHandler refreshButton.Click, Sub(sender, e) LoadHistory()
+        AddHandler actionFilter.SelectedIndexChanged, AddressOf FilterChanged
+        AddHandler searchFilter.TextChanged, AddressOf FilterChanged
+        AddHandler fromFilter.ValueChanged, AddressOf FilterChanged
+        AddHandler toFilter.ValueChanged, AddressOf FilterChanged
+        actions.Controls.Add(refreshButton)
         actions.Controls.Add(selectButton)
         actions.Controls.Add(deleteSelectedButton)
-        header.Controls.Add(actions)
-        layout.Controls.Add(header, 0, 0)
+        actions.Dock = DockStyle.Fill
+        actions.FlowDirection = FlowDirection.RightToLeft
+        actions.WrapContents = False
+        actions.Padding = New Padding(0, 6, 0, 0)
+        filters.Dock = DockStyle.Fill
+        filters.FlowDirection = FlowDirection.LeftToRight
+        filters.WrapContents = True
+        filters.Padding = New Padding(0, 6, 4, 0)
+        Dim toolbar As New TableLayoutPanel With {
+            .Dock = DockStyle.Fill,
+            .ColumnCount = 2,
+            .RowCount = 1,
+            .Margin = New Padding(0),
+            .Padding = New Padding(0)
+        }
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 408.0F))
+        toolbar.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        toolbar.Controls.Add(filters, 0, 0)
+        toolbar.Controls.Add(actions, 1, 0)
+        layout.Controls.Add(toolbar, 0, 0)
         ConfigureGrid()
         layout.Controls.Add(grid, 0, 1)
         ConfigurePagination(layout)
@@ -81,7 +136,17 @@ Public Class ucStudentHistory
         button.Size = New Size(width, 28)
         button.FlatStyle = FlatStyle.Flat
         button.FlatAppearance.BorderSize = 0
+        button.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        button.Cursor = Cursors.Hand
         button.UseVisualStyleBackColor = True
+    End Sub
+
+    Private Shared Sub ConfigureDateFilter(dateFilter As DateTimePicker)
+        dateFilter.Format = DateTimePickerFormat.Short
+        dateFilter.ShowCheckBox = True
+        dateFilter.Checked = False
+        dateFilter.Width = 120
+        dateFilter.Margin = New Padding(0, 0, 8, 0)
     End Sub
 
     Private Sub ConfigureGrid()
@@ -163,12 +228,66 @@ Public Class ucStudentHistory
             For Each entry As StudentHistoryEntry In StudentHistoryService.GetForStudent(Session.CurrentUser.UserId)
                 AddHistory(entry)
             Next
+            PopulateActionFilter()
             pageIndex = 0
             RenderPage()
         Catch ex As Exception
             MessageBox.Show("Could not load your history: " & ex.Message, "History", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
+
+    Private Sub PopulateActionFilter()
+        Dim selectedAction As String = TryCast(actionFilter.SelectedItem, String)
+        updatingFilters = True
+        actionFilter.BeginUpdate()
+        actionFilter.Items.Clear()
+        actionFilter.Items.Add("All Activities")
+        For Each filterAction As String In historyItems.
+            Select(Function(item) item.Action).
+            Where(Function(actionName) Not String.IsNullOrWhiteSpace(actionName)).
+            Distinct(StringComparer.OrdinalIgnoreCase).
+            OrderBy(Function(actionName) actionName)
+            actionFilter.Items.Add(filterAction)
+        Next
+        actionFilter.SelectedItem = If(String.IsNullOrWhiteSpace(selectedAction), "All Activities", selectedAction)
+        If actionFilter.SelectedIndex < 0 Then actionFilter.SelectedIndex = 0
+        actionFilter.EndUpdate()
+        updatingFilters = False
+    End Sub
+
+    Private Sub FilterChanged(sender As Object, e As EventArgs)
+        If updatingFilters Then Return
+        pageIndex = 0
+        RenderPage()
+    End Sub
+
+    Private Function GetFilteredItems() As List(Of HistoryItem)
+        Dim query As IEnumerable(Of HistoryItem) = historyItems
+        Dim selectedAction As String = TryCast(actionFilter.SelectedItem, String)
+        If Not String.IsNullOrWhiteSpace(selectedAction) AndAlso selectedAction <> "All Activities" Then
+            query = query.Where(Function(item) String.Equals(item.Action, selectedAction, StringComparison.OrdinalIgnoreCase))
+        End If
+
+        Dim searchText As String = searchFilter.Text.Trim()
+        If searchText.Length > 0 Then
+            query = query.Where(Function(item)
+                                    Return If(item.Proposal, String.Empty).IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                                           If(item.Action, String.Empty).IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+                                           If(item.Remarks, String.Empty).IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0
+                                End Function)
+        End If
+
+        If fromFilter.Checked Then
+            Dim startDate As DateTime = fromFilter.Value.Date
+            query = query.Where(Function(item) item.Timestamp >= startDate)
+        End If
+        If toFilter.Checked Then
+            Dim endDate As DateTime = toFilter.Value.Date.AddDays(1)
+            query = query.Where(Function(item) item.Timestamp < endDate)
+        End If
+
+        Return query.OrderByDescending(Function(item) item.Timestamp).ToList()
+    End Function
 
     Private Sub AddHistory(entry As StudentHistoryEntry)
         historyItems.Add(New HistoryItem With {
@@ -182,7 +301,7 @@ Public Class ucStudentHistory
 
     Private Sub RenderPage()
         grid.Rows.Clear()
-        Dim orderedItems As List(Of HistoryItem) = historyItems.OrderByDescending(Function(item) item.Timestamp).ToList()
+        Dim orderedItems As List(Of HistoryItem) = GetFilteredItems()
         Dim pageItems As List(Of HistoryItem) = orderedItems.Skip(pageIndex * pageSize).Take(pageSize).ToList()
         For Each item As HistoryItem In pageItems
             Dim rowIndex As Integer = grid.Rows.Add(False, item.Timestamp.ToString("MMM d, yyyy h:mm tt"), item.Proposal, item.Action, item.Remarks)
@@ -216,7 +335,7 @@ Public Class ucStudentHistory
 
     Private Sub ChangePage(offset As Integer)
         Dim target As Integer = pageIndex + offset
-        Dim pageCount As Integer = Math.Max(1, CInt(Math.Ceiling(historyItems.Count / CDbl(pageSize))))
+        Dim pageCount As Integer = Math.Max(1, CInt(Math.Ceiling(GetFilteredItems().Count / CDbl(pageSize))))
         If target < 0 OrElse target >= pageCount Then Return
         pageIndex = target
         RenderPage()

@@ -23,6 +23,11 @@ Public Class ucReports
     Private WithEvents cboYearLevelFilter As New ComboBox()
     Private WithEvents cboSemesterFilter As New ComboBox()
     Private WithEvents cboStatusFilter As New ComboBox()
+    Private WithEvents txtSearchFilter As New TextBox()
+    Private WithEvents chkSubmittedFrom As New CheckBox()
+    Private WithEvents dtpSubmittedFrom As New DateTimePicker()
+    Private WithEvents chkSubmittedThrough As New CheckBox()
+    Private WithEvents dtpSubmittedThrough As New DateTimePicker()
     Private WithEvents cboPageSize As New ComboBox()
     Private WithEvents dgvReportData As New DataGridView()
     Private ReadOnly pnlPagination As New Panel()
@@ -48,6 +53,7 @@ Public Class ucReports
         Dim summaryPanel As New TableLayoutPanel()
         Dim chartsPanel As New TableLayoutPanel()
         Dim filterPanel As New FlowLayoutPanel()
+        Dim reportToolbar As New TableLayoutPanel()
 
         Me.SuspendLayout()
         Me.AutoScaleMode = AutoScaleMode.Dpi
@@ -73,15 +79,47 @@ Public Class ucReports
         filterPanel.Dock = DockStyle.Top
         filterPanel.Height = 44
         filterPanel.FlowDirection = FlowDirection.LeftToRight
-        filterPanel.WrapContents = False
-        filterPanel.Padding = New Padding(0, 7, 0, 0)
+        filterPanel.WrapContents = True
+        filterPanel.Padding = New Padding(0, 6, 4, 0)
 
-        ConfigureFilterComboBox(cboYearLevelFilter, "cboYearLevelFilter", 160)
-        ConfigureFilterComboBox(cboSemesterFilter, "cboSemesterFilter", 160)
-        ConfigureFilterComboBox(cboStatusFilter, "cboStatusFilter", 160)
+        ConfigureFilterComboBox(cboYearLevelFilter, "cboYearLevelFilter", 120)
+        ConfigureFilterComboBox(cboSemesterFilter, "cboSemesterFilter", 120)
+        ConfigureFilterComboBox(cboStatusFilter, "cboStatusFilter", 120)
+        txtSearchFilter.Name = "txtSearchFilter"
+        txtSearchFilter.Width = 210
+        txtSearchFilter.Height = 28
+        txtSearchFilter.Margin = New Padding(0, 0, 12, 0)
+        txtSearchFilter.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular)
+        txtSearchFilter.PlaceholderText = "Search title or group"
+
+        ConfigureDateFilterCheckBox(chkSubmittedFrom, "chkSubmittedFrom", "From")
+
+        ConfigureDateFilter(dtpSubmittedFrom, "dtpSubmittedFrom")
+        dtpSubmittedFrom.Margin = New Padding(0, 0, 10, 0)
+
+        ConfigureDateFilterCheckBox(chkSubmittedThrough, "chkSubmittedThrough", "Through")
+
+        ConfigureDateFilter(dtpSubmittedThrough, "dtpSubmittedThrough")
+
         filterPanel.Controls.Add(cboYearLevelFilter)
         filterPanel.Controls.Add(cboSemesterFilter)
         filterPanel.Controls.Add(cboStatusFilter)
+        filterPanel.Controls.Add(txtSearchFilter)
+        filterPanel.Controls.Add(chkSubmittedFrom)
+        filterPanel.Controls.Add(dtpSubmittedFrom)
+        filterPanel.Controls.Add(chkSubmittedThrough)
+        filterPanel.Controls.Add(dtpSubmittedThrough)
+
+        reportToolbar.Name = "tlpReportToolbar"
+        reportToolbar.Dock = DockStyle.Top
+        reportToolbar.Height = 82
+        reportToolbar.ColumnCount = 2
+        reportToolbar.RowCount = 1
+        reportToolbar.Margin = New Padding(0)
+        reportToolbar.Padding = New Padding(0)
+        reportToolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        reportToolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 240.0F))
+        reportToolbar.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         pnlPagination.Name = "pnlReportPagination"
         pnlPagination.Dock = DockStyle.Bottom
@@ -150,11 +188,13 @@ Public Class ucReports
         plotByStatus.Dock = DockStyle.Fill
         plotByStatus.MinimumSize = New Size(0, 220)
         plotByStatus.Margin = New Padding(0, 0, 8, 0)
+        ConfigureReportPlot(plotByStatus)
 
         plotByYearLevel.Name = "plotByYearLevel"
         plotByYearLevel.Dock = DockStyle.Fill
         plotByYearLevel.MinimumSize = New Size(0, 220)
         plotByYearLevel.Margin = New Padding(8, 0, 0, 0)
+        ConfigureReportPlot(plotByYearLevel)
         chartsPanel.Controls.Add(plotByStatus, 0, 0)
         chartsPanel.Controls.Add(plotByYearLevel, 1, 0)
 
@@ -174,18 +214,19 @@ Public Class ucReports
 
         headerPanel.Name = "pnlReportsHeader"
         headerPanel.Dock = DockStyle.Top
-        headerPanel.Height = 96
+        headerPanel.Height = 40
 
         headerTextLayout.Name = "tlpReportsHeaderText"
         headerTextLayout.Dock = DockStyle.Fill
         headerTextLayout.ColumnCount = 1
         headerTextLayout.RowCount = 2
         headerTextLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
+        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 0.0F))
         headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         lblHeader.Name = "lblHeader"
         lblHeader.Text = "Reports"
+        lblHeader.Visible = False
         lblHeader.Dock = DockStyle.Fill
         lblHeader.TextAlign = ContentAlignment.MiddleLeft
         lblHeader.Font = New Font("Segoe UI", 23.0F, FontStyle.Bold)
@@ -204,7 +245,7 @@ Public Class ucReports
         headerActions.Width = 240
         headerActions.FlowDirection = FlowDirection.RightToLeft
         headerActions.WrapContents = False
-        headerActions.Padding = New Padding(0, 2, 0, 0)
+        headerActions.Padding = New Padding(0, 6, 0, 0)
 
         btnRefresh.Name = "btnRefresh"
         btnRefresh.Text = "Refresh"
@@ -223,15 +264,15 @@ Public Class ucReports
 
         headerActions.Controls.Add(btnRefresh)
         headerActions.Controls.Add(btnExportCsv)
+        reportToolbar.Controls.Add(filterPanel, 0, 0)
+        reportToolbar.Controls.Add(headerActions, 1, 0)
         headerPanel.Controls.Add(headerTextLayout)
-        headerPanel.Controls.Add(headerActions)
 
         Me.Controls.Add(dgvReportData)
         Me.Controls.Add(pnlPagination)
-        Me.Controls.Add(filterPanel)
+        Me.Controls.Add(reportToolbar)
         Me.Controls.Add(chartsPanel)
         Me.Controls.Add(summaryPanel)
-        Me.Controls.Add(headerPanel)
         Me.ResumeLayout(False)
         _pageControlsReady = True
     End Sub
@@ -251,14 +292,14 @@ Public Class ucReports
         accentStrip.BackColor = accentColor
 
         titleLabel.AutoSize = True
-        titleLabel.Location = New Point(16, 10)
+        titleLabel.Location = New Point(16, 12)
         titleLabel.Text = title
-        titleLabel.Font = New Font("Segoe UI", 9.0F, FontStyle.Regular)
+        titleLabel.Font = New Font("Segoe UI", 9.5F, FontStyle.Regular)
         titleLabel.ForeColor = Color.DimGray
 
         countLabel.AutoSize = True
-        countLabel.Location = New Point(16, 35)
-        countLabel.Font = New Font("Segoe UI", 19.0F, FontStyle.Bold)
+        countLabel.Location = New Point(16, 39)
+        countLabel.Font = New Font("Segoe UI", 22.0F, FontStyle.Bold)
         countLabel.ForeColor = Color.FromArgb(45, 45, 45)
         countLabel.Text = "0"
 
@@ -268,11 +309,40 @@ Public Class ucReports
         Return card
     End Function
 
+    Private Sub ConfigureReportPlot(reportPlot As FormsPlot)
+        reportPlot.Plot.FigureBackground.Color = ScottPlot.Color.FromColor(SystemColors.Window)
+        reportPlot.Plot.DataBackground.Color = ScottPlot.Color.FromColor(SystemColors.Window)
+        reportPlot.Plot.Axes.Left.Min = 0
+        reportPlot.Plot.Axes.Left.MajorTickStyle.Length = 0
+        reportPlot.Plot.Axes.Bottom.MajorTickStyle.Length = 0
+        reportPlot.Plot.Axes.Margins(0.04, 0.12)
+    End Sub
+
     Private Sub ConfigureFilterComboBox(filterComboBox As ComboBox, controlName As String, controlWidth As Integer)
         filterComboBox.Name = controlName
         filterComboBox.DropDownStyle = ComboBoxStyle.DropDownList
         filterComboBox.Width = controlWidth
         filterComboBox.Margin = New Padding(0, 0, 12, 0)
+    End Sub
+
+    Private Sub ConfigureDateFilter(dateFilter As DateTimePicker, controlName As String)
+        dateFilter.Name = controlName
+        dateFilter.Format = DateTimePickerFormat.Custom
+        dateFilter.CustomFormat = "MMM d, yyyy"
+        dateFilter.Enabled = False
+        dateFilter.Width = 128
+        dateFilter.Height = 28
+        dateFilter.Margin = New Padding(0, 0, 10, 0)
+    End Sub
+
+    Private Sub ConfigureDateFilterCheckBox(dateFilterCheckBox As CheckBox, controlName As String, label As String)
+        dateFilterCheckBox.Name = controlName
+        dateFilterCheckBox.Text = label
+        dateFilterCheckBox.AutoSize = True
+        dateFilterCheckBox.Height = 28
+        dateFilterCheckBox.Margin = New Padding(0, 0, 4, 0)
+        dateFilterCheckBox.TextAlign = ContentAlignment.MiddleLeft
+        dateFilterCheckBox.UseVisualStyleBackColor = True
     End Sub
 
     Private Sub SetupGridColumns()
@@ -332,13 +402,11 @@ Public Class ucReports
             Return
         End Try
 
-        UpdateSummaryCards()
-        UpdateCharts()
         ApplyFiltersToGrid()
     End Sub
 
-    Private Sub UpdateSummaryCards()
-        Dim totalCount As Integer = _allProposals.Count
+    Private Sub UpdateSummaryCards(proposals As List(Of Proposal))
+        Dim totalCount As Integer = proposals.Count
         lblTotalProposalsCount.Text = totalCount.ToString()
 
         If totalCount < 2 Then
@@ -346,8 +414,8 @@ Public Class ucReports
         Else
             Dim strongestSimilarityTotal As Double = 0.0R
 
-            For Each proposal As Proposal In _allProposals
-                Dim otherProposals As List(Of ProposalTitleInfo) = _allProposals _
+            For Each proposal As Proposal In proposals
+                Dim otherProposals As List(Of ProposalTitleInfo) = proposals _
                     .Where(Function(candidate) Not Object.ReferenceEquals(candidate, proposal)) _
                     .Select(Function(candidate) New ProposalTitleInfo With {
                         .Title = If(candidate.Title, String.Empty),
@@ -368,12 +436,12 @@ Public Class ucReports
         If totalCount = 0 Then
             lblApprovalRateCount.Text = "N/A"
         Else
-            Dim approvedCount As Integer = _allProposals.Where(Function(proposal) proposal.Status = ProposalStatus.Approved).Count()
+            Dim approvedCount As Integer = proposals.Where(Function(proposal) proposal.Status = ProposalStatus.Approved).Count()
             lblApprovalRateCount.Text = CInt(Math.Round(approvedCount / CDbl(totalCount) * 100.0R)).ToString() & "%"
         End If
     End Sub
 
-    Private Sub UpdateCharts()
+    Private Sub UpdateCharts(proposals As List(Of Proposal))
         Dim statuses As ProposalStatus() = {
             ProposalStatus.Pending,
             ProposalStatus.Approved,
@@ -387,13 +455,15 @@ Public Class ucReports
             Color.FromArgb(201, 138, 43),
             Color.FromArgb(166, 58, 58)
         }
+        Dim statusCounts As Integer() = statuses _
+            .Select(Function(status) proposals.Where(Function(proposal) proposal.Status = status).Count()) _
+            .ToArray()
 
         plotByStatus.Plot.Clear()
         For index As Integer = 0 To statuses.Length - 1
-            Dim currentStatus As ProposalStatus = statuses(index)
             Dim bar As New ScottPlot.Bar With {
                 .Position = index,
-                .Value = _allProposals.Where(Function(proposal) proposal.Status = currentStatus).Count(),
+                .Value = statusCounts(index),
                 .Size = 0.7,
                 .FillColor = ScottPlot.Color.FromColor(statusColors(index))
             }
@@ -402,21 +472,20 @@ Public Class ucReports
         plotByStatus.Plot.Title("Proposals by Status")
         plotByStatus.Plot.YLabel("Count")
         plotByStatus.Plot.Axes.Bottom.SetTicks({0.0R, 1.0R, 2.0R, 3.0R}, statusLabels)
+        SetReportPlotScale(plotByStatus, statusCounts.Max())
         plotByStatus.Refresh()
 
-        Dim yearLevels As List(Of String) = _allProposals _
-            .Select(Function(proposal) If(proposal.YearLevel, String.Empty)) _
-            .Distinct(StringComparer.Ordinal) _
-            .OrderBy(Function(yearLevel) GetYearLevelSortOrder(yearLevel)) _
-            .ThenBy(Function(yearLevel) yearLevel, StringComparer.Ordinal) _
-            .ToList()
+        Dim yearLevels As String() = {"1st Year", "2nd Year", "3rd Year", "4th Year"}
+        Dim yearLevelCounts As Integer() = yearLevels _
+            .Select(Function(yearLevel) proposals.Where(
+                Function(proposal) String.Equals(proposal.YearLevel, yearLevel, StringComparison.Ordinal)).Count()) _
+            .ToArray()
 
         plotByYearLevel.Plot.Clear()
-        For index As Integer = 0 To yearLevels.Count - 1
-            Dim yearLevel As String = yearLevels(index)
+        For index As Integer = 0 To yearLevels.Length - 1
             Dim bar As New ScottPlot.Bar With {
                 .Position = index,
-                .Value = _allProposals.Where(Function(proposal) String.Equals(proposal.YearLevel, yearLevel, StringComparison.Ordinal)).Count(),
+                .Value = yearLevelCounts(index),
                 .Size = 0.7,
                 .FillColor = ScottPlot.Color.FromColor(Color.FromArgb(122, 31, 46))
             }
@@ -424,27 +493,20 @@ Public Class ucReports
         Next
         plotByYearLevel.Plot.Title("Proposals by Year Level")
         plotByYearLevel.Plot.YLabel("Count")
-        If yearLevels.Count > 0 Then
-            Dim tickPositions As Double() = Enumerable.Range(0, yearLevels.Count).Select(Function(index) CDbl(index)).ToArray()
-            plotByYearLevel.Plot.Axes.Bottom.SetTicks(tickPositions, yearLevels.ToArray())
-        End If
+        Dim yearLevelTickPositions As Double() = Enumerable.Range(0, yearLevels.Length) _
+            .Select(Function(index) CDbl(index)).ToArray()
+        plotByYearLevel.Plot.Axes.Bottom.SetTicks(yearLevelTickPositions, yearLevels)
+        SetReportPlotScale(plotByYearLevel, yearLevelCounts.Max())
         plotByYearLevel.Refresh()
     End Sub
 
-    Private Function GetYearLevelSortOrder(yearLevel As String) As Integer
-        Select Case yearLevel
-            Case "1st Year"
-                Return 1
-            Case "2nd Year"
-                Return 2
-            Case "3rd Year"
-                Return 3
-            Case "4th Year"
-                Return 4
-            Case Else
-                Return Integer.MaxValue
-        End Select
-    End Function
+    Private Sub SetReportPlotScale(reportPlot As FormsPlot, highestBarValue As Integer)
+        reportPlot.Plot.Axes.AutoScale()
+        reportPlot.Plot.Axes.Bottom.Min = -0.5
+        reportPlot.Plot.Axes.Bottom.Max = 3.5
+        reportPlot.Plot.Axes.Left.Min = 0
+        reportPlot.Plot.Axes.Left.Max = Math.Max(1, highestBarValue) * 1.2
+    End Sub
 
     Private Sub ApplyFiltersToGrid()
         Dim proposalsToShow As IEnumerable(Of Proposal) = _allProposals
@@ -466,10 +528,33 @@ Public Class ucReports
             proposalsToShow = proposalsToShow.Where(Function(proposal) FormatStatus(proposal.Status) = selectedStatus)
         End If
 
+        Dim searchText As String = txtSearchFilter.Text.Trim()
+        If searchText.Length > 0 Then
+            proposalsToShow = proposalsToShow.Where(
+                Function(proposal) ContainsIgnoreCase(proposal.Title, searchText) OrElse
+                                   ContainsIgnoreCase(proposal.GroupName, searchText))
+        End If
+
+        If chkSubmittedFrom.Checked Then
+            Dim submittedFrom As DateTime = dtpSubmittedFrom.Value.Date
+            proposalsToShow = proposalsToShow.Where(Function(proposal) proposal.SubmittedAt >= submittedFrom)
+        End If
+
+        If chkSubmittedThrough.Checked Then
+            Dim submittedBefore As DateTime = dtpSubmittedThrough.Value.Date.AddDays(1)
+            proposalsToShow = proposalsToShow.Where(Function(proposal) proposal.SubmittedAt < submittedBefore)
+        End If
+
         _filteredProposals = proposalsToShow.ToList()
         _currentPageIndex = 0
+        UpdateSummaryCards(_filteredProposals)
+        UpdateCharts(_filteredProposals)
         RenderCurrentPage()
     End Sub
+
+    Private Function ContainsIgnoreCase(value As String, searchText As String) As Boolean
+        Return If(value, String.Empty).IndexOf(searchText, StringComparison.OrdinalIgnoreCase) >= 0
+    End Function
 
     Private Sub RenderCurrentPage()
         Dim totalCount As Integer = _filteredProposals.Count
@@ -522,6 +607,28 @@ Public Class ucReports
     End Sub
 
     Private Sub cboStatusFilter_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cboStatusFilter.SelectedIndexChanged
+        ApplyFiltersToGrid()
+    End Sub
+
+    Private Sub txtSearchFilter_TextChanged(sender As Object, e As EventArgs) Handles txtSearchFilter.TextChanged
+        ApplyFiltersToGrid()
+    End Sub
+
+    Private Sub dtpSubmittedFrom_ValueChanged(sender As Object, e As EventArgs) Handles dtpSubmittedFrom.ValueChanged
+        ApplyFiltersToGrid()
+    End Sub
+
+    Private Sub chkSubmittedFrom_CheckedChanged(sender As Object, e As EventArgs) Handles chkSubmittedFrom.CheckedChanged
+        dtpSubmittedFrom.Enabled = chkSubmittedFrom.Checked
+        ApplyFiltersToGrid()
+    End Sub
+
+    Private Sub dtpSubmittedThrough_ValueChanged(sender As Object, e As EventArgs) Handles dtpSubmittedThrough.ValueChanged
+        ApplyFiltersToGrid()
+    End Sub
+
+    Private Sub chkSubmittedThrough_CheckedChanged(sender As Object, e As EventArgs) Handles chkSubmittedThrough.CheckedChanged
+        dtpSubmittedThrough.Enabled = chkSubmittedThrough.Checked
         ApplyFiltersToGrid()
     End Sub
 

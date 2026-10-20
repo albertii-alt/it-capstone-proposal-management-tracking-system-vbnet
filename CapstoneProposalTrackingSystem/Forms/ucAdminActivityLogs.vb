@@ -48,6 +48,7 @@ Public Class ucAdminActivityLogs
         Dim headerPanel As New Panel()
         Dim headerTextLayout As New TableLayoutPanel()
         Dim filterPanel As New FlowLayoutPanel()
+        Dim toolbar As New TableLayoutPanel()
         Dim paginationControls As New FlowLayoutPanel()
 
         Me.SuspendLayout()
@@ -58,14 +59,14 @@ Public Class ucAdminActivityLogs
         layout.Dock = DockStyle.Fill
         layout.Padding = New Padding(20)
         layout.ColumnCount = 1
-        layout.RowCount = 4
+        layout.RowCount = 3
         layout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 110.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
         lblHeader.Text = "Admin Activity Logs"
+        lblHeader.Visible = False
         lblHeader.Dock = DockStyle.Fill
         lblHeader.TextAlign = ContentAlignment.MiddleLeft
         lblHeader.Font = New Font("Segoe UI", 23.0F, FontStyle.Bold)
@@ -79,7 +80,7 @@ Public Class ucAdminActivityLogs
         headerTextLayout.Dock = DockStyle.Fill
         headerTextLayout.ColumnCount = 1
         headerTextLayout.RowCount = 2
-        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
+        headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 0.0F))
         headerTextLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         headerTextLayout.Controls.Add(lblHeader, 0, 0)
         headerTextLayout.Controls.Add(lblHeaderSubtitle, 0, 1)
@@ -87,11 +88,11 @@ Public Class ucAdminActivityLogs
         headerPanel.Controls.Add(headerTextLayout)
 
         Dim headerActions As New FlowLayoutPanel With {
-            .Dock = DockStyle.Right,
-            .Width = 390,
+            .Dock = DockStyle.Fill,
             .FlowDirection = FlowDirection.RightToLeft,
             .WrapContents = False,
-            .Padding = New Padding(0, 2, 0, 0)
+            .Padding = New Padding(0, 6, 0, 0),
+            .Margin = New Padding(0)
         }
         btnToggleSelectionMode.Text = "Select"
         btnToggleSelectionMode.Size = New Size(100, 28)
@@ -109,7 +110,6 @@ Public Class ucAdminActivityLogs
         headerActions.Controls.Add(btnRefresh)
         headerActions.Controls.Add(btnToggleSelectionMode)
         headerActions.Controls.Add(btnDeleteSelected)
-        headerPanel.Controls.Add(headerActions)
 
         filterPanel.Dock = DockStyle.Fill
         filterPanel.FlowDirection = FlowDirection.LeftToRight
@@ -130,6 +130,7 @@ Public Class ucAdminActivityLogs
         dtpTo.Margin = New Padding(0, 0, 12, 0)
         btnRefresh.Text = "Refresh"
         btnRefresh.Size = New Size(90, 28)
+        btnRefresh.Margin = New Padding(8, 0, 0, 0)
         filterPanel.Controls.AddRange({
             New Label With {.Text = "Action", .AutoSize = True, .Margin = New Padding(0, 6, 5, 0)},
             cboAction,
@@ -142,7 +143,6 @@ Public Class ucAdminActivityLogs
             New Label With {.Text = "To", .AutoSize = True, .Margin = New Padding(0, 6, 5, 0)},
             dtpTo
         })
-
         SetupGrid()
 
         pnlPagination.Dock = DockStyle.Fill
@@ -178,10 +178,22 @@ Public Class ucAdminActivityLogs
         pnlPagination.Controls.Add(paginationControls)
         pnlPagination.Controls.Add(lblPaginationSummary)
 
-        layout.Controls.Add(headerPanel, 0, 0)
-        layout.Controls.Add(filterPanel, 0, 1)
-        layout.Controls.Add(dgvLogs, 0, 2)
-        layout.Controls.Add(pnlPagination, 0, 3)
+        filterPanel.Padding = New Padding(0, 6, 4, 0)
+        toolbar.Name = "tlpActivityLogsToolbar"
+        toolbar.Dock = DockStyle.Fill
+        toolbar.ColumnCount = 2
+        toolbar.RowCount = 1
+        toolbar.Margin = New Padding(0)
+        toolbar.Padding = New Padding(0)
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 410.0F))
+        toolbar.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        toolbar.Controls.Add(filterPanel, 0, 0)
+        toolbar.Controls.Add(headerActions, 1, 0)
+
+        layout.Controls.Add(toolbar, 0, 0)
+        layout.Controls.Add(dgvLogs, 0, 1)
+        layout.Controls.Add(pnlPagination, 0, 2)
         Controls.Add(layout)
         Me.ResumeLayout(False)
     End Sub

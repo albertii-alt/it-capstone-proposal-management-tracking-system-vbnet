@@ -1,6 +1,40 @@
+# Visual Studio and .NET build output
 .vs/
 **/bin/
 **/obj/
 *.user
 *.suo
+*.userosscache
+*.sln.docstates
 *.Backup.tmp
+
+# Build and test artifacts
+artifacts/
+TestResults/
+*.trx
+*.log
+*.pdb
+*.cache
+
+# IDE-local files
+.idea/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local.config
+*.local.json
+app.config.local
+appsettings.Local.json
+secrets.json
+secrets.*.json
+*.pfx
+*.p12
+*.key
+
+# Local database backups and exports
+*.bak
+*.backup
+*.dump
+*.sql.gz

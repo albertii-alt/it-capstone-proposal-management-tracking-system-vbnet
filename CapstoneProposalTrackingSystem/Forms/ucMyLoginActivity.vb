@@ -13,9 +13,8 @@ Public Class ucMyLoginActivity
     Private _updatingSelection As Boolean
     Private _initializing As Boolean = True
 
-    Private ReadOnly lblHeader As New Label()
-    Private ReadOnly lblSubtitle As New Label()
     Private ReadOnly cboEvent As New ComboBox()
+    Private ReadOnly txtSearch As New TextBox()
     Private ReadOnly dtpFrom As New DateTimePicker()
     Private ReadOnly dtpTo As New DateTimePicker()
     Private ReadOnly btnRefresh As New Button()
@@ -38,33 +37,41 @@ Public Class ucMyLoginActivity
     End Sub
 
     Private Sub InitializeComponent()
-        Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .Padding = New Padding(20), .ColumnCount = 1, .RowCount = 4}
+        Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .Padding = New Padding(20), .ColumnCount = 1, .RowCount = 3}
         Me.AutoScaleMode = AutoScaleMode.Dpi
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 80.0F))
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 94.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
-        Dim headerPanel As New Panel With {.Dock = DockStyle.Fill}
-        Dim headerText As New TableLayoutPanel With {.Dock = DockStyle.Fill, .ColumnCount = 1, .RowCount = 2}
-        headerText.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
-        headerText.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
-        lblHeader.Text = "My Login Activity"
-        lblHeader.Dock = DockStyle.Fill
-        lblHeader.Font = New Font("Segoe UI", 23.0F, FontStyle.Bold)
-        lblHeader.TextAlign = ContentAlignment.MiddleLeft
-        lblSubtitle.Text = "Review your successful sign-in and sign-out history."
-        lblSubtitle.Dock = DockStyle.Fill
-        lblSubtitle.Font = New Font("Segoe UI", 9.0F)
-        lblSubtitle.ForeColor = Color.DimGray
-        headerText.Controls.Add(lblHeader, 0, 0)
-        headerText.Controls.Add(lblSubtitle, 0, 1)
-        headerPanel.Controls.Add(headerText)
-
-        Dim actions As New FlowLayoutPanel With {.Dock = DockStyle.Right, .Width = 390, .FlowDirection = FlowDirection.RightToLeft, .WrapContents = False, .Padding = New Padding(0, 2, 0, 0)}
+        Dim actions As New FlowLayoutPanel With {.Dock = DockStyle.Fill, .FlowDirection = FlowDirection.RightToLeft, .WrapContents = False, .Padding = New Padding(0, 6, 0, 0)}
         ConfigureButton(btnRefresh, "Refresh", 90)
-        ConfigureButton(btnSelect, "Select", 100)
-        ConfigureButton(btnActiveSessions, "Active Sessions", 125)
+        ConfigureButton(btnSelect, "Select", 110)
+        ConfigureButton(btnActiveSessions, "Active Sessions", 145)
+        btnRefresh.BackColor = Color.FromArgb(122, 31, 46)
+        btnRefresh.ForeColor = Color.White
+        btnRefresh.FlatStyle = FlatStyle.Flat
+        btnRefresh.FlatAppearance.BorderSize = 0
+        btnRefresh.FlatAppearance.MouseOverBackColor = Color.FromArgb(148, 44, 62)
+        btnRefresh.UseVisualStyleBackColor = False
+        btnRefresh.Cursor = Cursors.Hand
+        btnRefresh.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        btnActiveSessions.BackColor = Color.White
+        btnActiveSessions.ForeColor = Color.FromArgb(122, 31, 46)
+        btnActiveSessions.FlatStyle = FlatStyle.Flat
+        btnActiveSessions.FlatAppearance.BorderColor = Color.FromArgb(122, 31, 46)
+        btnActiveSessions.FlatAppearance.BorderSize = 1
+        btnActiveSessions.FlatAppearance.MouseOverBackColor = Color.FromArgb(250, 240, 220)
+        btnActiveSessions.UseVisualStyleBackColor = False
+        btnActiveSessions.Cursor = Cursors.Hand
+        btnActiveSessions.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        btnSelect.BackColor = Color.FromArgb(246, 201, 69)
+        btnSelect.ForeColor = Color.FromArgb(122, 31, 46)
+        btnSelect.FlatStyle = FlatStyle.Flat
+        btnSelect.FlatAppearance.BorderSize = 0
+        btnSelect.FlatAppearance.MouseOverBackColor = Color.FromArgb(255, 216, 105)
+        btnSelect.UseVisualStyleBackColor = False
+        btnSelect.Cursor = Cursors.Hand
+        btnSelect.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
         btnDeleteSelected.Text = "Delete Selected"
         btnDeleteSelected.Size = New Size(180, 28)
         btnDeleteSelected.FlatStyle = FlatStyle.Flat
@@ -74,28 +81,30 @@ Public Class ucMyLoginActivity
         btnDeleteSelected.UseVisualStyleBackColor = False
         btnDeleteSelected.Visible = False
         btnDeleteSelected.Enabled = False
-        actions.Controls.Add(btnRefresh)
-        actions.Controls.Add(btnSelect)
-        actions.Controls.Add(btnActiveSessions)
-        actions.Controls.Add(btnDeleteSelected)
-        headerPanel.Controls.Add(actions)
-
-        Dim filters As New FlowLayoutPanel With {.Dock = DockStyle.Fill, .FlowDirection = FlowDirection.LeftToRight, .WrapContents = True, .Padding = New Padding(0, 3, 0, 0)}
+        Dim filters As New FlowLayoutPanel With {.Dock = DockStyle.Fill, .FlowDirection = FlowDirection.LeftToRight, .WrapContents = True, .Padding = New Padding(0, 6, 4, 0)}
         cboEvent.DropDownStyle = ComboBoxStyle.DropDownList
         cboEvent.Width = 145
         cboEvent.Items.AddRange({"All events", "Login", "Logout"})
         cboEvent.SelectedIndex = 0
+        cboEvent.Margin = New Padding(0, 0, 12, 0)
+        txtSearch.Width = 190
+        txtSearch.PlaceholderText = "Search event, device, or IP"
+        txtSearch.Margin = New Padding(0, 0, 12, 0)
         dtpFrom.Format = DateTimePickerFormat.Short
         dtpFrom.Value = DateTime.Today.AddDays(-30)
         dtpTo.Format = DateTimePickerFormat.Short
         dtpTo.Value = DateTime.Today
         filters.Controls.Add(New Label With {.Text = "Event", .AutoSize = True, .Margin = New Padding(0, 6, 5, 0)})
         filters.Controls.Add(cboEvent)
-        filters.Controls.Add(New Label With {.Text = "From", .AutoSize = True, .Margin = New Padding(12, 6, 5, 0)})
+        filters.Controls.Add(txtSearch)
+        filters.Controls.Add(New Label With {.Text = "From", .AutoSize = True, .Margin = New Padding(0, 6, 5, 0)})
         filters.Controls.Add(dtpFrom)
         filters.Controls.Add(New Label With {.Text = "To", .AutoSize = True, .Margin = New Padding(12, 6, 5, 0)})
         filters.Controls.Add(dtpTo)
-
+        actions.Controls.Add(btnRefresh)
+        actions.Controls.Add(btnActiveSessions)
+        actions.Controls.Add(btnSelect)
+        actions.Controls.Add(btnDeleteSelected)
         SetupGrid()
 
         Dim footer As New Panel With {.Dock = DockStyle.Fill}
@@ -128,16 +137,28 @@ Public Class ucMyLoginActivity
         chkSelectAll.Visible = False
         dgvActivity.Controls.Add(chkSelectAll)
         Controls.Add(layout)
-        layout.Controls.Add(headerPanel, 0, 0)
-        layout.Controls.Add(filters, 0, 1)
-        layout.Controls.Add(dgvActivity, 0, 2)
-        layout.Controls.Add(footer, 0, 3)
+        Dim toolbar As New TableLayoutPanel With {
+            .Dock = DockStyle.Fill,
+            .ColumnCount = 2,
+            .RowCount = 1,
+            .Margin = New Padding(0),
+            .Padding = New Padding(0)
+        }
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        toolbar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 530.0F))
+        toolbar.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        toolbar.Controls.Add(filters, 0, 0)
+        toolbar.Controls.Add(actions, 1, 0)
+        layout.Controls.Add(toolbar, 0, 0)
+        layout.Controls.Add(dgvActivity, 0, 1)
+        layout.Controls.Add(footer, 0, 2)
 
         AddHandler btnRefresh.Click, Sub() Reload()
         AddHandler btnActiveSessions.Click, AddressOf ShowActiveSessions
         AddHandler btnSelect.Click, AddressOf ToggleSelection
         AddHandler btnDeleteSelected.Click, AddressOf DeleteSelected
         AddHandler cboEvent.SelectedIndexChanged, Sub() Reload()
+        AddHandler txtSearch.TextChanged, Sub() Reload()
         AddHandler dtpFrom.ValueChanged, Sub() Reload()
         AddHandler dtpTo.ValueChanged, Sub() Reload()
         AddHandler cboPageSize.SelectedIndexChanged, AddressOf PageSizeChanged
@@ -167,6 +188,8 @@ Public Class ucMyLoginActivity
         button.Text = text
         button.Size = New Size(width, 28)
         button.Margin = New Padding(8, 0, 0, 0)
+        button.Font = New Font("Segoe UI", 9.0F, FontStyle.Bold)
+        button.Cursor = Cursors.Hand
         button.UseVisualStyleBackColor = True
     End Sub
 
@@ -223,6 +246,7 @@ Public Class ucMyLoginActivity
                 If(cboEvent.SelectedIndex <= 0, Nothing, cboEvent.Text),
                 dtpFrom.Value.Date,
                 dtpTo.Value.Date.AddDays(1),
+                txtSearch.Text.Trim(),
                 _currentPageIndex,
                 _pageSize,
                 _totalCount)

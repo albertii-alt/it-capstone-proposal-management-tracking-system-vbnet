@@ -14,6 +14,7 @@ Public Class ucStudentProposals
     Private ReadOnly previousPage As New Button()
     Private ReadOnly nextPage As New Button()
     Private ReadOnly actionColumn As New DataGridViewButtonColumn()
+    Private ReadOnly btnRefresh As New Button()
     Private _activeFilter As Nullable(Of ProposalStatus)
     Private _pageIndex As Integer
     Private _pageSize As Integer = 25
@@ -26,43 +27,42 @@ Public Class ucStudentProposals
     End Sub
 
     Private Sub BuildLayout()
-        Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .Padding = New Padding(20), .ColumnCount = 1, .RowCount = 4}
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 112.0F))
-        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 78.0F))
+        Dim layout As New TableLayoutPanel With {.Dock = DockStyle.Fill, .Padding = New Padding(20), .ColumnCount = 1, .RowCount = 3}
+        layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 64.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         layout.RowStyles.Add(New RowStyle(SizeType.Absolute, 44.0F))
 
-        Dim header As New Panel With {.Dock = DockStyle.Fill}
-        header.Controls.Add(New Label With {.Text = "My Proposals", .Dock = DockStyle.Top, .Height = 66, .Font = New Font("Segoe UI", 23.0F, FontStyle.Bold), .ForeColor = Color.FromArgb(45, 45, 45), .Padding = New Padding(0, 5, 0, 0)})
-        header.Controls.Add(New Label With {.Text = "Submit proposals and track their review status.", .Dock = DockStyle.Bottom, .Height = 26, .ForeColor = Color.DimGray})
-        layout.Controls.Add(header, 0, 0)
-
-        Dim toolbar As New Panel With {.Dock = DockStyle.Fill}
-        pills.Dock = DockStyle.Top
-        pills.Height = 36
-        pills.FlowDirection = FlowDirection.LeftToRight
-        pills.WrapContents = False
         AddFilterPill("All", Nothing)
         AddFilterPill("Pending", ProposalStatus.Pending)
         AddFilterPill("Approved", ProposalStatus.Approved)
         AddFilterPill("For Revision", ProposalStatus.ForRevision)
         AddFilterPill("Rejected", ProposalStatus.Rejected)
-        toolbar.Controls.Add(pills)
-        Dim submit As New Button With {.Text = "Submit New Proposal", .Size = New Size(160, 30), .Anchor = AnchorStyles.Top Or AnchorStyles.Right}
-        submit.Location = New Point(toolbar.ClientSize.Width - submit.Width, 39)
-        AddHandler toolbar.Resize, Sub(sender, e) submit.Left = toolbar.ClientSize.Width - submit.Width
+        Dim actions As New FlowLayoutPanel()
+        Dim submit As New Button With {
+            .Text = "Submit New Proposal",
+            .Size = New Size(150, 28),
+            .FlatStyle = FlatStyle.Flat,
+            .BackColor = Color.FromArgb(246, 201, 69),
+            .ForeColor = Color.FromArgb(122, 31, 46),
+            .UseVisualStyleBackColor = False
+        }
+        submit.FlatAppearance.BorderSize = 0
+        btnRefresh.Text = "Refresh"
+        btnRefresh.Size = New Size(90, 28)
+        btnRefresh.UseVisualStyleBackColor = True
         AddHandler submit.Click, AddressOf SubmitProposal
-        toolbar.Controls.Add(submit)
-        layout.Controls.Add(toolbar, 0, 1)
+        AddHandler btnRefresh.Click, Sub(sender, e) LoadProposals()
+        layout.Controls.Add(AdminFilterToolbar.Create(actions, pills, btnRefresh, 64, submit), 0, 0)
 
         ConfigureGrid()
-        layout.Controls.Add(grid, 0, 2)
+        layout.Controls.Add(grid, 0, 1)
         ConfigurePagination(layout)
         Controls.Add(layout)
     End Sub
 
     Private Sub AddFilterPill(text As String, status As Nullable(Of ProposalStatus))
-        Dim button As New Button With {.Text = text, .Width = If(text = "For Revision", 120, 100), .Height = 30, .FlatStyle = FlatStyle.Flat, .Margin = New Padding(0, 3, 8, 0), .Tag = status}
+        pills.FlowDirection = FlowDirection.LeftToRight
+        Dim button As New Button With {.Text = text, .Width = If(text = "For Revision", 120, 100), .Height = 30, .FlatStyle = FlatStyle.Flat, .Margin = New Padding(0, 0, 8, 0), .Tag = status}
         button.FlatAppearance.BorderSize = 0
         AddHandler button.Click, Sub(sender, e)
                                      _activeFilter = DirectCast(DirectCast(sender, Button).Tag, Nullable(Of ProposalStatus))
@@ -136,7 +136,7 @@ Public Class ucStudentProposals
         controls.Controls.AddRange({pageSizeSelector, previousPage, pageIndicator, nextPage})
         footer.Controls.Add(controls)
         footer.Controls.Add(pageSummary)
-        layout.Controls.Add(footer, 0, 3)
+        layout.Controls.Add(footer, 0, 2)
         AddHandler pageSizeSelector.SelectedIndexChanged, AddressOf PageSizeChanged
         AddHandler previousPage.Click, Sub(sender, e) ChangePage(-1)
         AddHandler nextPage.Click, Sub(sender, e) ChangePage(1)

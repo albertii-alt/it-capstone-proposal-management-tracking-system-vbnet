@@ -9,7 +9,9 @@ Public Class frmAdminShell
     Private ReadOnly _activeColor As Color = Color.FromArgb(246, 201, 69)
 
     Private ReadOnly pnlSidebar As New Panel()
+    Private ReadOnly pnlWorkspace As New Panel()
     Private ReadOnly pnlContent As New Panel()
+    Private ReadOnly adminHeader As New ucAdminHeader()
     Private ReadOnly pnlLogoTopSpacer As New Panel()
     Private ReadOnly pnlNavigationTopSpacer As New Panel()
     Private ReadOnly pnlLogoutBottomSpacer As New Panel()
@@ -42,6 +44,8 @@ Public Class frmAdminShell
         AddHandler btnNavSecurityLogs.Click, AddressOf btnNavSecurityLogs_Click
         AddHandler btnNavProfile.Click, AddressOf btnNavProfile_Click
         AddHandler btnNavLogout.Click, AddressOf btnNavLogout_Click
+        AddHandler adminHeader.ProfileRequested, Sub(profileSender, profileEvent) btnNavProfile.PerformClick()
+        AddHandler adminHeader.NotificationsRequested, Sub(notificationSender, notificationEvent) ShowNotifications()
         AddHandler MyBase.Load, AddressOf frmAdminShell_Load
         AddHandler sessionTimer.Tick, AddressOf sessionTimer_Tick
     End Sub
@@ -66,6 +70,13 @@ Public Class frmAdminShell
         pnlContent.Name = "pnlContent"
         pnlContent.Dock = DockStyle.Fill
         pnlContent.BackColor = SystemColors.Control
+
+        pnlWorkspace.Name = "pnlWorkspace"
+        pnlWorkspace.Dock = DockStyle.Fill
+        pnlWorkspace.BackColor = SystemColors.Control
+
+        pnlWorkspace.Controls.Add(pnlContent)
+        pnlWorkspace.Controls.Add(adminHeader)
 
         pnlLogoTopSpacer.Name = "pnlLogoTopSpacer"
         pnlLogoTopSpacer.Dock = DockStyle.Top
@@ -143,7 +154,7 @@ Public Class frmAdminShell
         pnlSidebar.Controls.Add(picLogo)
         pnlSidebar.Controls.Add(pnlLogoTopSpacer)
 
-        Me.Controls.Add(pnlContent)
+        Me.Controls.Add(pnlWorkspace)
         Me.Controls.Add(pnlSidebar)
     End Sub
 
@@ -234,17 +245,49 @@ Public Class frmAdminShell
 
     Private Sub LoadContent(control As UserControl, activeButton As Button)
         pnlContent.Controls.Clear()
+        adminHeader.SetPageTitle(activeButton.Text.Trim(), GetPageSubtitle(activeButton))
+        adminHeader.RefreshIdentity()
         control.Dock = DockStyle.Fill
         pnlContent.Controls.Add(control)
         SetActiveNavButton(activeButton)
     End Sub
+
+    Private Function GetPageSubtitle(activeButton As Button) As String
+        Select Case activeButton.Name
+            Case "btnNavDashboard"
+                If Session.CurrentUser IsNot Nothing Then
+                    Return "Welcome, " & Session.CurrentUser.FullName
+                End If
+                Return "Welcome to the Capstone System. Here's an overview of the current status."
+            Case "btnNavManageProposals"
+                Return "Review submissions, manage titles, and update proposal decisions."
+            Case "btnNavTitleArchive"
+                Return "Browse approved titles and search their archived keywords."
+            Case "btnNavReports"
+                Return "View proposal statistics and export filtered report data."
+            Case "btnNavManageAccounts"
+                Return "Create accounts, update roles, and manage access."
+            Case "btnNavStudentRegistrations"
+                Return "Review student accounts before granting access to the system."
+            Case "btnNavActivityLogs"
+                Return "Review administrative changes made in the system."
+            Case "btnNavLoginActivity"
+                Return "Review your successful sign-in and sign-out history."
+            Case "btnNavSecurityLogs"
+                Return "Monitor authentication and account security events."
+            Case "btnNavProfile"
+                Return "Manage your account details and sign-in password."
+            Case Else
+                Return String.Empty
+        End Select
+    End Function
 
     Private Sub ShowNotifications()
         Using dialog As New frmNotifications(Session.CurrentUser)
             AddHandler dialog.NotificationSelected, AddressOf NotificationSelected
             dialog.ShowDialog(Me)
         End Using
-        btnNavDashboard.PerformClick()
+        adminHeader.RefreshNotificationBadge()
     End Sub
 
     Private Sub NotificationSelected(sender As Object, e As frmNotifications.NotificationSelectedEventArgs)
@@ -289,15 +332,9 @@ Public Class frmAdminShell
 
     Private Sub btnNavDashboard_Click(sender As Object, e As EventArgs)
         Dim dashboard As New ucDashboard()
-        AddHandler dashboard.ProfileRequested, AddressOf ucDashboard_ProfileRequested
         AddHandler dashboard.DuplicateReviewRequested, AddressOf ucDashboard_DuplicateReviewRequested
         AddHandler dashboard.ActivityRequested, AddressOf ucDashboard_ActivityRequested
-        AddHandler dashboard.NotificationsRequested, Sub(notificationSender, notificationEvent) ShowNotifications()
         LoadContent(dashboard, btnNavDashboard)
-    End Sub
-
-    Private Sub ucDashboard_ProfileRequested(sender As Object, e As EventArgs)
-        btnNavProfile.PerformClick()
     End Sub
 
     Private Sub ucDashboard_DuplicateReviewRequested(sender As Object, e As EventArgs)
