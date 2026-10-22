@@ -93,10 +93,10 @@ Public Class frmStudentDashboard
             .Dock = DockStyle.Fill,
             .ColumnCount = 1,
             .RowCount = 2,
-            .Padding = New Padding(20, 4, 8, 4)
+            .Padding = New Padding(20, 2, 8, 4)
         }
         pageHeading.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        pageHeading.RowStyles.Add(New RowStyle(SizeType.Absolute, 42.0F))
+        pageHeading.RowStyles.Add(New RowStyle(SizeType.Absolute, 48.0F))
         pageHeading.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         lblPageTitle.Dock = DockStyle.Fill
         lblPageTitle.Font = New Font("Segoe UI", 22.0F, FontStyle.Bold)

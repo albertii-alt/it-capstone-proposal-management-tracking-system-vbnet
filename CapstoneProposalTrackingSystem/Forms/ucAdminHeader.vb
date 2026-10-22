@@ -52,9 +52,9 @@ Public Class ucAdminHeader
         pageHeadingLayout.Dock = DockStyle.Fill
         pageHeadingLayout.ColumnCount = 1
         pageHeadingLayout.RowCount = 2
-        pageHeadingLayout.Padding = New Padding(0, 8, 8, 8)
+        pageHeadingLayout.Padding = New Padding(0, 2, 8, 4)
         pageHeadingLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
-        pageHeadingLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 42.0F))
+        pageHeadingLayout.RowStyles.Add(New RowStyle(SizeType.Absolute, 48.0F))
         pageHeadingLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
         lblPageTitle.Name = "lblAdminPageTitle"
