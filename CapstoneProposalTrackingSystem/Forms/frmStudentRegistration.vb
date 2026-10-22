@@ -11,61 +11,115 @@ Public Class frmStudentRegistration
     Private ReadOnly txtConfirmPassword As New TextBox()
     Private ReadOnly chkShowPassword As New CheckBox()
     Private ReadOnly lblStatus As New Label()
+    Private ReadOnly brandPanel As New Panel()
+    Private ReadOnly brandLogo As New PictureBox()
+    Private ReadOnly brandTitle As New Label()
+    Private ReadOnly brandSubtitle As New Label()
+    Private ReadOnly registrationLayout As New TableLayoutPanel()
+    Private ReadOnly registrationFields As New TableLayoutPanel()
+    Private ReadOnly registrationFieldsHost As New Panel()
+    Private ReadOnly registrationContent As New Panel()
+    Private ReadOnly registrationFooter As New Panel()
+    Private ReadOnly _registerButton As New Button()
+    Private ReadOnly _cancelButton As New Button()
+    Private ReadOnly registrationTitle As New Label()
+    Private ReadOnly registrationSubtitle As New Label()
 
     Public Sub New()
         InitializeRegistrationLayout()
+        AddHandler Me.Load, AddressOf RegistrationForm_Load
+        AddHandler Me.Resize, AddressOf RegistrationForm_Resize
+        AddHandler brandPanel.Resize, AddressOf PositionRegistrationBrand
+        PositionRegistrationBrand(Me, EventArgs.Empty)
     End Sub
 
     Private Sub InitializeRegistrationLayout()
         Me.AutoScaleMode = AutoScaleMode.Dpi
         Me.BackColor = Color.FromArgb(250, 249, 246)
-        Me.ClientSize = New Size(760, 480)
-        Me.FormBorderStyle = FormBorderStyle.FixedDialog
-        Me.MaximizeBox = False
-        Me.MinimizeBox = False
+        Me.ClientSize = New Size(1280, 800)
+        Me.MinimumSize = New Size(900, 650)
+        Me.FormBorderStyle = FormBorderStyle.Sizable
+        Me.MaximizeBox = True
+        Me.MinimizeBox = True
         Me.StartPosition = FormStartPosition.CenterParent
         Me.Text = "Student Registration"
 
-        Dim card As New Panel With {
-            .BackColor = SystemColors.Window,
-            .BorderStyle = BorderStyle.FixedSingle,
-            .Dock = DockStyle.Fill,
-            .Padding = New Padding(0)}
-        Dim brand As New Panel With {.BackColor = Color.FromArgb(122, 31, 46), .Dock = DockStyle.Left, .Width = 280}
-        Dim logo As New PictureBox With {.Size = New Size(150, 150), .Location = New Point(65, 28), .SizeMode = PictureBoxSizeMode.Zoom}
-        Dim brandTitle As New Label With {
-            .Text = "Create Student Account",
-            .ForeColor = Color.FromArgb(246, 201, 69),
-            .Font = New Font("Segoe UI", 16.0F, FontStyle.Bold),
-            .TextAlign = ContentAlignment.MiddleCenter,
-            .Location = New Point(16, 194),
-            .Size = New Size(248, 44)}
-        Dim brandSubtitle As New Label With {
-            .Text = "Submit your details for administrator verification.",
-            .ForeColor = Color.FromArgb(240, 217, 160),
-            .Font = New Font("Segoe UI", 9.0F),
-            .TextAlign = ContentAlignment.MiddleCenter,
-            .Location = New Point(20, 242),
-            .Size = New Size(240, 64)}
-        LoadLogo(logo)
-        brand.Controls.AddRange({brandSubtitle, brandTitle, logo})
+        registrationLayout.Dock = DockStyle.Fill
+        registrationLayout.ColumnCount = 2
+        registrationLayout.RowCount = 1
+        registrationLayout.Margin = New Padding(0)
+        registrationLayout.Padding = New Padding(0)
+        registrationLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 420.0F))
+        registrationLayout.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
+        registrationLayout.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
 
-        Dim formPanel As New Panel With {.Dock = DockStyle.Fill, .Padding = New Padding(20, 14, 20, 10)}
-        Dim title As New Label With {.Text = "Student Registration", .Font = New Font("Segoe UI", 20.0F, FontStyle.Bold), .ForeColor = Color.FromArgb(40, 40, 40), .Dock = DockStyle.Top, .Height = 48, .TextAlign = ContentAlignment.MiddleLeft, .Padding = New Padding(0, 2, 0, 2)}
-        Dim subtitle As New Label With {.Text = "Use the same credentials you will use to sign in.", .Font = New Font("Segoe UI", 8.5F), .ForeColor = Color.DimGray, .Dock = DockStyle.Top, .Height = 24}
-        Dim fields As New TableLayoutPanel With {.Dock = DockStyle.Top, .Height = 180, .ColumnCount = 2, .RowCount = 3}
+        brandPanel.Name = "pnlRegistrationBrand"
+        brandPanel.BackColor = Color.FromArgb(122, 31, 46)
+        brandPanel.Dock = DockStyle.Fill
+        brandLogo.Name = "picRegistrationLogo"
+        brandLogo.Size = New Size(190, 190)
+        brandLogo.SizeMode = PictureBoxSizeMode.Zoom
+        brandTitle.Text = "Create Student Account"
+        brandTitle.ForeColor = Color.FromArgb(246, 201, 69)
+        brandTitle.Font = New Font("Segoe UI", 23.0F, FontStyle.Bold)
+        brandTitle.TextAlign = ContentAlignment.MiddleCenter
+        brandSubtitle.Text = "Submit your details for administrator verification."
+        brandSubtitle.ForeColor = Color.FromArgb(240, 217, 160)
+        brandSubtitle.Font = New Font("Segoe UI", 12.0F)
+        brandSubtitle.TextAlign = ContentAlignment.MiddleCenter
+        LoadLogo(brandLogo)
+        brandPanel.Controls.AddRange({brandSubtitle, brandTitle, brandLogo})
+
+        Dim formPanel As New Panel With {
+            .Name = "pnlRegistrationForm",
+            .Dock = DockStyle.Fill,
+            .Padding = New Padding(48, 32, 48, 24),
+            .AutoScroll = True,
+            .BackColor = SystemColors.Window
+        }
+        registrationContent.Name = "pnlRegistrationContent"
+        registrationContent.Size = New Size(900, 578)
+        registrationContent.Anchor = AnchorStyles.None
+
+        registrationTitle.Text = "Student Registration"
+        registrationTitle.Font = New Font("Segoe UI", 28.0F, FontStyle.Bold)
+        registrationTitle.ForeColor = Color.FromArgb(40, 40, 40)
+        registrationTitle.Height = 64
+        registrationTitle.TextAlign = ContentAlignment.MiddleLeft
+        registrationTitle.Padding = New Padding(0, 2, 0, 2)
+
+        registrationSubtitle.Text = "Use the same credentials you will use to sign in."
+        registrationSubtitle.Font = New Font("Segoe UI", 11.0F)
+        registrationSubtitle.ForeColor = Color.DimGray
+        registrationSubtitle.TextAlign = ContentAlignment.MiddleLeft
+        registrationSubtitle.Height = 36
+
+        registrationTitle.Name = "lblRegistrationTitle"
+        registrationSubtitle.Name = "lblRegistrationSubtitle"
+        registrationFieldsHost.Name = "pnlRegistrationFieldsHost"
+        registrationFieldsHost.Dock = DockStyle.None
+        registrationFieldsHost.Height = 292
+        registrationFieldsHost.Margin = New Padding(0)
+
+        Dim fields As TableLayoutPanel = registrationFields
+        fields.Name = "tlpRegistrationFields"
+        fields.Dock = DockStyle.None
+        fields.Size = New Size(820, 282)
+        fields.ColumnCount = 2
+        fields.RowCount = 3
+        fields.Margin = New Padding(0)
         fields.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50.0F))
         fields.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50.0F))
         For index As Integer = 0 To 2
-            fields.RowStyles.Add(New RowStyle(SizeType.Absolute, 60.0F))
+            fields.RowStyles.Add(New RowStyle(SizeType.Absolute, 94.0F))
         Next
 
-        ConfigureTextBox(txtSchoolId, "School ID", "24-018701")
-        ConfigureTextBox(txtFullName, "Full Name", Nothing)
-        ConfigureTextBox(txtEmail, "Email", Nothing)
-        ConfigureTextBox(txtUsername, "Username", Nothing)
-        ConfigureTextBox(txtPassword, "Password", Nothing)
-        ConfigureTextBox(txtConfirmPassword, "Confirm Password", Nothing)
+        ConfigureTextBox(txtSchoolId, "School ID")
+        ConfigureTextBox(txtFullName, "Full Name")
+        ConfigureTextBox(txtEmail, "Email")
+        ConfigureTextBox(txtUsername, "Username")
+        ConfigureTextBox(txtPassword, "Password")
+        ConfigureTextBox(txtConfirmPassword, "Confirm Password")
         txtPassword.PasswordChar = "*"c
         txtConfirmPassword.PasswordChar = "*"c
         fields.Controls.Add(CreateField("School ID", txtSchoolId), 0, 0)
@@ -74,50 +128,168 @@ Public Class frmStudentRegistration
         fields.Controls.Add(CreateField("Username", txtUsername), 1, 1)
         fields.Controls.Add(CreateField("Password", txtPassword), 0, 2)
         fields.Controls.Add(CreateField("Confirm Password", txtConfirmPassword), 1, 2)
+        registrationFieldsHost.Controls.Add(fields)
+        AddHandler registrationFieldsHost.Resize, AddressOf CenterRegistrationFields
+        CenterRegistrationFields(registrationFieldsHost, EventArgs.Empty)
 
         chkShowPassword.Name = "chkShowPassword"
         chkShowPassword.Text = "Show password"
-        chkShowPassword.Dock = DockStyle.Top
-        chkShowPassword.Height = 24
+        chkShowPassword.AutoSize = True
+        chkShowPassword.Height = 34
+        chkShowPassword.Font = New Font("Segoe UI", 10.0F)
         chkShowPassword.ForeColor = Color.DimGray
         AddHandler chkShowPassword.CheckedChanged, AddressOf chkShowPassword_CheckedChanged
 
-        lblStatus.Dock = DockStyle.Top
-        lblStatus.Height = 24
+        lblStatus.Name = "lblRegistrationStatus"
+        lblStatus.Height = 42
+        lblStatus.Font = New Font("Segoe UI", 10.0F)
         lblStatus.ForeColor = Color.FromArgb(166, 58, 58)
         lblStatus.TextAlign = ContentAlignment.MiddleCenter
 
-        Dim footer As New FlowLayoutPanel With {.Dock = DockStyle.Bottom, .Height = 42, .FlowDirection = FlowDirection.RightToLeft, .WrapContents = False}
-        Dim registerButton As New Button With {.Text = "Submit Registration", .Size = New Size(150, 32), .BackColor = Color.FromArgb(246, 201, 69), .ForeColor = Color.FromArgb(122, 31, 46), .FlatStyle = FlatStyle.Flat}
-        registerButton.FlatAppearance.BorderSize = 0
-        AddHandler registerButton.Click, AddressOf RegisterButton_Click
-        Dim cancelButton As New Button With {.Text = "Cancel", .Size = New Size(90, 32), .DialogResult = DialogResult.Cancel}
-        footer.Controls.Add(registerButton)
-        footer.Controls.Add(cancelButton)
+        registrationFooter.Name = "pnlRegistrationActions"
+        registrationFooter.Dock = DockStyle.None
+        registrationFooter.Height = 60
+        registrationFooter.BackColor = SystemColors.Window
 
-        formPanel.Controls.Add(footer)
-        formPanel.Controls.Add(lblStatus)
-        formPanel.Controls.Add(chkShowPassword)
-        formPanel.Controls.Add(fields)
-        formPanel.Controls.Add(subtitle)
-        formPanel.Controls.Add(title)
-        card.Controls.Add(formPanel)
-        card.Controls.Add(brand)
-        Me.Controls.Add(card)
-        Me.AcceptButton = registerButton
-        Me.CancelButton = cancelButton
+        _registerButton.Text = "Submit Registration"
+        _registerButton.Size = New Size(210, 48)
+        _registerButton.BackColor = Color.FromArgb(246, 201, 69)
+        _registerButton.ForeColor = Color.FromArgb(122, 31, 46)
+        _registerButton.FlatStyle = FlatStyle.Flat
+        _registerButton.Font = New Font("Segoe UI", 11.0F, FontStyle.Bold)
+        _registerButton.Cursor = Cursors.Hand
+        _registerButton.FlatAppearance.BorderSize = 0
+        AddHandler _registerButton.Click, AddressOf RegisterButton_Click
+
+        _cancelButton.Text = "Cancel"
+        _cancelButton.Size = New Size(110, 48)
+        _cancelButton.DialogResult = DialogResult.Cancel
+        _cancelButton.Font = New Font("Segoe UI", 10.0F)
+        AddHandler registrationFooter.Resize, AddressOf CenterRegistrationActions
+        registrationFooter.Controls.Add(_registerButton)
+        registrationFooter.Controls.Add(_cancelButton)
+
+        registrationContent.Controls.Add(registrationTitle)
+        registrationContent.Controls.Add(registrationSubtitle)
+        registrationContent.Controls.Add(registrationFieldsHost)
+        registrationContent.Controls.Add(chkShowPassword)
+        registrationContent.Controls.Add(lblStatus)
+        registrationContent.Controls.Add(registrationFooter)
+        formPanel.Controls.Add(registrationContent)
+
+        AddHandler formPanel.Resize, AddressOf CenterRegistrationContent
+        AddHandler registrationContent.Resize, AddressOf LayoutRegistrationContent
+        CenterRegistrationContent(formPanel, EventArgs.Empty)
+        LayoutRegistrationContent(registrationContent, EventArgs.Empty)
+        CenterRegistrationToggle(registrationContent, EventArgs.Empty)
+
+        registrationLayout.Controls.Add(brandPanel, 0, 0)
+        registrationLayout.Controls.Add(formPanel, 1, 0)
+        Me.Controls.Add(registrationLayout)
+        Me.AcceptButton = _registerButton
+        Me.CancelButton = _cancelButton
     End Sub
 
-    Private Shared Sub ConfigureTextBox(textBox As TextBox, caption As String, placeholder As String)
+    Private Sub RegistrationForm_Load(sender As Object, e As EventArgs)
+        FormDisplayHelper.MaximizeFullScreen(Me)
+        UpdateRegistrationBrandWidth()
+    End Sub
+
+    Private Sub RegistrationForm_Resize(sender As Object, e As EventArgs)
+        UpdateRegistrationBrandWidth()
+    End Sub
+
+    Private Sub UpdateRegistrationBrandWidth()
+        If registrationLayout Is Nothing OrElse brandPanel Is Nothing Then Return
+        Dim brandWidth As Integer = Math.Max(300, Math.Min(500, CInt(registrationLayout.ClientSize.Width * 0.36R)))
+        registrationLayout.ColumnStyles(0).Width = brandWidth
+        PositionRegistrationBrand(Me, EventArgs.Empty)
+    End Sub
+
+    Private Sub PositionRegistrationBrand(sender As Object, e As EventArgs)
+        Dim panelWidth As Integer = brandPanel.ClientSize.Width
+        Dim panelHeight As Integer = brandPanel.ClientSize.Height
+        brandLogo.Location = New Point(Math.Max(0, (panelWidth - brandLogo.Width) \ 2),
+                                       Math.Max(24, CInt(panelHeight * 0.28R) - brandLogo.Height \ 2))
+        brandTitle.SetBounds(24, brandLogo.Bottom + 24, Math.Max(0, panelWidth - 48), 64)
+        brandSubtitle.SetBounds(36, brandTitle.Bottom + 12, Math.Max(0, panelWidth - 72), 72)
+    End Sub
+
+    Private Sub CenterRegistrationFields(sender As Object, e As EventArgs)
+        Dim fieldsWidth As Integer = Math.Min(900, registrationFieldsHost.ClientSize.Width)
+        registrationFields.Size = New Size(fieldsWidth, registrationFields.Height)
+        registrationFields.Location = New Point(
+            Math.Max(0, (registrationFieldsHost.ClientSize.Width - fieldsWidth) \ 2),
+            0)
+        AlignRegistrationContentToFields()
+        CenterRegistrationActions(registrationFooter, EventArgs.Empty)
+    End Sub
+
+    Private Sub CenterRegistrationContent(sender As Object, e As EventArgs)
+        Dim formPanel As Panel = DirectCast(sender, Panel)
+        Dim availableWidth As Integer = Math.Max(0, formPanel.ClientSize.Width - formPanel.Padding.Horizontal)
+        Dim availableHeight As Integer = Math.Max(0, formPanel.ClientSize.Height - formPanel.Padding.Vertical)
+        Dim contentWidth As Integer = Math.Min(900, availableWidth)
+        registrationContent.Width = contentWidth
+        registrationContent.Location = New Point(
+            formPanel.Padding.Left + Math.Max(0, (availableWidth - contentWidth) \ 2),
+            formPanel.Padding.Top + Math.Max(0, (availableHeight - registrationContent.Height) \ 2))
+    End Sub
+
+    Private Sub LayoutRegistrationContent(sender As Object, e As EventArgs)
+        Dim contentWidth As Integer = registrationContent.ClientSize.Width
+        registrationTitle.SetBounds(0, 0, contentWidth, 64)
+        registrationSubtitle.SetBounds(0, 64, contentWidth, 36)
+        registrationFieldsHost.SetBounds(0, 120, contentWidth, 292)
+        lblStatus.SetBounds(0, 456, contentWidth, 42)
+        registrationFooter.SetBounds(0, 498, contentWidth, 60)
+        CenterRegistrationFields(registrationFieldsHost, EventArgs.Empty)
+        CenterRegistrationToggle(registrationContent, EventArgs.Empty)
+    End Sub
+
+    Private Sub AlignRegistrationContentToFields()
+        Dim leftEdge As Integer = registrationFields.Left + 15
+        Dim rightEdge As Integer = registrationFields.Right - 25
+        Dim alignedWidth As Integer = Math.Max(0, rightEdge - leftEdge)
+
+        registrationTitle.SetBounds(leftEdge, 0, alignedWidth, 64)
+        registrationSubtitle.SetBounds(leftEdge, 64, alignedWidth, 36)
+        lblStatus.SetBounds(leftEdge, 456, alignedWidth, 42)
+    End Sub
+
+    Private Sub CenterRegistrationToggle(sender As Object, e As EventArgs)
+        chkShowPassword.Location = New Point(
+            registrationFields.Left + 15,
+            422)
+    End Sub
+
+    Private Sub CenterRegistrationActions(sender As Object, e As EventArgs)
+        Dim gap As Integer = 12
+        Dim groupWidth As Integer = _registerButton.Width + _cancelButton.Width + gap
+        Dim rightEdge As Integer = Math.Min(registrationFooter.ClientSize.Width, registrationFields.Right - 25)
+        Dim left As Integer = Math.Max(0, rightEdge - groupWidth)
+        _cancelButton.Location = New Point(left, 6)
+        _registerButton.Location = New Point(_cancelButton.Right + gap, 6)
+    End Sub
+
+    Private Shared Sub ConfigureTextBox(textBox As TextBox, caption As String)
         textBox.Name = caption.Replace(" ", String.Empty)
         textBox.Dock = DockStyle.Fill
         textBox.Margin = New Padding(4, 18, 8, 2)
         textBox.BorderStyle = BorderStyle.FixedSingle
+        textBox.Font = New Font("Segoe UI", 12.0F)
+        textBox.MinimumSize = New Size(0, 42)
     End Sub
 
     Private Shared Function CreateField(caption As String, valueControl As TextBox) As Panel
-        Dim panel As New Panel With {.Dock = DockStyle.Fill, .Padding = New Padding(4, 0, 8, 0)}
-        Dim label As New Label With {.Text = caption, .Dock = DockStyle.Top, .Height = 18, .Font = New Font("Segoe UI", 8.0F), .ForeColor = Color.DimGray}
+        Dim panel As New Panel With {.Dock = DockStyle.Fill, .Padding = New Padding(8, 4, 14, 4)}
+        Dim label As New Label With {
+            .Text = caption,
+            .Dock = DockStyle.Top,
+            .Height = 26,
+            .Font = New Font("Segoe UI", 10.0F, FontStyle.Bold),
+            .ForeColor = Color.DimGray
+        }
         valueControl.Dock = DockStyle.Fill
         valueControl.Margin = New Padding(0)
         panel.Controls.Add(valueControl)
